@@ -222,3 +222,26 @@ nav button[data-p=sobre]:hover svg, nav button[data-p=sobre].pulo svg { animatio
   .pe .btn.primario span { display: none; }
   .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: 1fr; }
 }
+
+/* teclado e mouse (Controles): cada botão do jogo com as suas teclas */
+.teclado { display: grid; }
+.teclado .tgrupo { margin: 16px 0 4px; font: 700 12px var(--sans); letter-spacing: 1.6px; text-transform: uppercase; color: var(--tx3); }
+.teclado .tlinha { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 7px 10px; margin: 0 -10px; border-radius: var(--r1); transition: background .2s; }
+.teclado .tlinha + .tlinha { border-top: 1px solid var(--linha); }
+.teclado .tlinha.on { background: var(--brasa-suave); }
+.teclado .rot { font-size: 15px; color: var(--tx2); }
+.teclado .teclas { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.tecla { position: relative; min-width: 38px; height: 30px; padding: 0 11px; border-radius: 7px; cursor: pointer; font: 700 13.5px ui-monospace, Consolas, monospace; color: var(--tx);
+  background: linear-gradient(180deg, #3d342c, #2a231e); border: 1px solid var(--linha2); border-bottom-width: 3px; box-shadow: var(--relevo);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform .25s var(--mola), border-color .2s, background .2s; }
+.tecla:hover { transform: translateY(-1px); border-color: var(--linha3); }
+.tecla:active { transform: translateY(1px); border-bottom-width: 2px; }
+.tecla .x { width: 0; overflow: hidden; color: var(--tx3); font-family: var(--sans); font-size: 15px; transition: width .2s var(--mola); }
+.tecla:hover .x { width: 10px; }
+.tecla .x:hover { color: var(--vermelho); }
+.tecla.mais { color: var(--tx3); background: transparent; border-style: dashed; border-bottom-width: 1px; box-shadow: none; }
+.tecla.mais:hover { color: var(--tx); }
+.tecla.repetida { border-color: rgba(229, 87, 75, .55); }
+.tecla.ouve { color: var(--brasa2); border-color: var(--brasa-linha); background: var(--brasa-suave); animation: ouvir 1s var(--suave) infinite; cursor: default; }
+@keyframes ouvir { 50% { box-shadow: 0 0 0 4px rgba(226, 96, 63, .12); } }
+@media (prefers-reduced-motion: reduce) { .tecla.ouve { animation: none; } }

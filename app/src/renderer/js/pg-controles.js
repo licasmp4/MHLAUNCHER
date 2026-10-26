@@ -73,8 +73,9 @@ Paginas.controles = {
     const MAPA = [["A · confirmar", "○", "B"], ["B · voltar", "✕", "A"], ["X", "△", "Y"], ["Y", "☐", "X"], ["L", "L1", "LB"], ["R", "R1", "RB"], ["ZL", "L2", "LT"], ["ZR", "R2", "RT"], ["+ · menu", "Options", "Menu"], ["−", "Create", "View"]];
     for (const [sw, ps] of MAPA) mapa.append(el("div", { class: "linha", style: { gridTemplateColumns: "1fr auto", padding: "8px 0" } }, el("span", { class: "dica", style: { fontSize: "14.5px" } }, "Switch " + sw), el("span", { class: "selo brasa", style: { minWidth: "56px", justifyContent: "center", fontSize: "13.5px" } }, ps)));
 
-    const atalhos = el("div", { class: "grade g2", style: { gap: "4px 28px" } }, [["W A S D", "andar"], ["Mouse", "câmera (clique na janela)"], ["Clique esq. / dir.", "X / A"], ["Espaço / R", "B / Y"], ["Q / E", "L / R"], ["Tab / T", "ZL / ZR"], ["Enter / Backspace", "+ / −"], ["Alt+Enter", "janela ou tela cheia"], ["F12", "screenshot"], ["F7", "troca o anti-serrilhado"], ["Insert", "menu da barra de vida e do dano"], ["Esc", "solta o mouse"]]
+    const atalhos = el("div", { class: "grade g2", style: { gap: "4px 28px", marginTop: "6px" } }, [["Mouse", "câmera (clique na janela)"], ["Esc", "solta o mouse"], ["Alt+Enter", "janela ou tela cheia"], ["Insert", "menu da barra de vida e do dano"], ["F12", "screenshot"], ["F7", "troca o anti-serrilhado"]]
       .map(([k, t]) => el("div", { class: "linha", style: { gridTemplateColumns: "auto 1fr", padding: "8px 0" } }, el("span", { class: "selo", style: { fontFamily: "ui-monospace, Consolas, monospace" } }, k), el("span", { class: "dica", style: { fontSize: "14.5px" } }, t))));
+    const tec = await montarTeclado();
     const sens = +(await ini.get("Mouse", "MouseSensitivity", "1.0")) || 1;
 
     c.append(cabecalho("controles", "Controles", "Os botões que aparecem no jogo e o seu controle.", [3, 27], "flutua"),
@@ -82,7 +83,8 @@ Paginas.controles = {
       prev,
       cartao(secao("Conectados agora"), lista),
       cartao(secao("Botões no seu controle", el("span", {}, seg([["Position", "Pela posição"], ["Label", "Pela letra"]], fb, v => ini.set("Controls", "FaceButtons", v)))), mapa),
-      cartao(secao("Teclado e mouse"), atalhos, linha("Sensibilidade do mouse", "Clique no jogo para prender o mouse; Esc solta.", el("div", { style: { width: "min(360px, 40vw)" } }, faixa(.1, 5, .1, sens, x => x.toFixed(1).replace(".", ","), x => ini.set("Mouse", "MouseSensitivity", x.toFixed(1)))), "mouse")));
+      cartao(secao("Teclado e mouse", tec.restaurar), el("div", { class: "dica", style: { marginBottom: "4px" } }, "Clique numa tecla para trocar e aperte a nova (tecla, botão do mouse ou rodinha). O + junta mais uma; o × tira. Vale ao abrir o jogo."), tec.caixa,
+        el("div", { style: { height: "10px" } }), secao("Fixos"), atalhos, linha("Sensibilidade do mouse", "Clique no jogo para prender o mouse; Esc solta.", el("div", { style: { width: "min(360px, 40vw)" } }, faixa(.1, 5, .1, sens, x => x.toFixed(1).replace(".", ","), x => ini.set("Mouse", "MouseSensitivity", x.toFixed(1)))), "mouse")));
     prev.style.marginBottom = "20px";
   },
 };

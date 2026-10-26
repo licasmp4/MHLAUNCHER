@@ -1,4 +1,1330 @@
-﻿diff --git a/runtime/net/emsync.c b/runtime/net/emsync.c
+diff --git a/runtime/config.c b/runtime/config.c
+index 3ebf3c8..aef7f7c 100644
+--- a/runtime/config.c
++++ b/runtime/config.c
+@@ -86,6 +86,36 @@ static const char DEFAULT_INI[] =
+     "; game's own camera options (speed, inverted axes) apply on top.\n"
+     "MouseSensitivity = 1.0\n"
+     "\n"
++    "[Keyboard]\n"
++    "; What presses each controller button: keys by name (A, Space, Left Shift, Tab, Return, Up, Keypad 1, F1...),\n"
++    "; mouse buttons (Mouse Left, Mouse Right, Mouse Middle, Mouse 4, Mouse 5) and the wheel (Wheel Up, Wheel Down);\n"
++    "; several separated by commas, None for nothing. Esc (lets the mouse go) and F7-F12 (screenshots) are taken.\n"
++    "; Moving the mouse turns the camera (the right stick). ItemPrev / ItemNext scroll the item bar (they hold L and\n"
++    "; press Y / A, as on the controller). The buttons are the Switch's: A confirms, B cancels and rolls.\n"
++    "A = Mouse Right\n"
++    "B = Space\n"
++    "X = Mouse Left\n"
++    "Y = R\n"
++    "L = Q, Mouse Middle\n"
++    "R = E\n"
++    "ZL = Tab\n"
++    "ZR = T\n"
++    "Plus = Return, Keypad Enter\n"
++    "Minus = Backspace\n"
++    "DpadUp = Up\n"
++    "DpadDown = Down\n"
++    "DpadLeft = Left\n"
++    "DpadRight = Right\n"
++    "LStick = Left Ctrl, Right Ctrl\n"
++    "RStick = Left Alt, Right Alt\n"
++    "MoveForward = W\n"
++    "MoveBack = S\n"
++    "MoveLeft = A\n"
++    "MoveRight = D\n"
++    "Walk = Left Shift\n"
++    "ItemPrev = Wheel Up\n"
++    "ItemNext = Wheel Down\n"
++    "\n"
+     "[Multiplayer]\n"
+     "; Local Play (the Switch's wireless play with people nearby) over the network. Create a hub under Local Play to\n"
+     "; host: the others reach your computer on this port. Over the internet the host forwards it in their router,\n"
+@@ -211,6 +241,52 @@ static bool parse_anchor(const char *v, int *out) {
+ static int desktop_w, desktop_h;
+ static bool render_auto = true;
+ 
++// [Keyboard]: the setting names, in ACT_* / BTN_* order
++static const char *const bind_names[ACT_COUNT] = {
++    "a", "b", "x", "y", "lstick", "rstick", "l", "r", "zl", "zr", "plus", "minus", "dpadleft", "dpadup", "dpadright",
++    "dpaddown", "moveforward", "moveback", "moveleft", "moveright", "walk", "itemprev", "itemnext"};
++static bool bind_set[ACT_COUNT];
++
++// One input by name: a key (SDL's names, any case), a mouse button or a wheel direction. 0: unknown or taken.
++static int parse_input(const char *name) {
++    char n[64];
++    snprintf(n, sizeof n, "%s", name);
++    squash(n);
++    static const struct { const char *name; int in; } extra[] = {
++        {"mouseleft", IN_MOUSE(1)}, {"mouse1", IN_MOUSE(1)}, {"mousemiddle", IN_MOUSE(2)}, {"mouse3", IN_MOUSE(2)},
++        {"mouseright", IN_MOUSE(3)}, {"mouse2", IN_MOUSE(3)}, {"mouse4", IN_MOUSE(4)}, {"mouse5", IN_MOUSE(5)},
++        {"wheelup", IN_WHEEL_UP}, {"wheeldown", IN_WHEEL_DOWN},
++        {"enter", SDL_SCANCODE_RETURN}, {"shift", SDL_SCANCODE_LSHIFT}, {"ctrl", SDL_SCANCODE_LCTRL},
++        {"control", SDL_SCANCODE_LCTRL}, {"alt", SDL_SCANCODE_LALT}};
++    for (unsigned i = 0; i < sizeof extra / sizeof *extra; i++)
++        if (!strcmp(n, extra[i].name)) return extra[i].in;
++    SDL_Scancode sc = SDL_GetScancodeFromName(name);
++    if (sc == SDL_SCANCODE_ESCAPE || (sc >= SDL_SCANCODE_F7 && sc <= SDL_SCANCODE_F12)) return 0;  // (taken: Esc, F7-F12)
++    return sc > SDL_SCANCODE_UNKNOWN && sc < SDL_SCANCODE_COUNT ? (int)sc : 0;
++}
++
++// "Q, Mouse Middle" -> the action's inputs. False (nothing changed) when a name is unknown.
++static bool parse_binds(int act, const char *v, int line) {
++    uint16_t in[BIND_MAX] = {0};
++    int n = 0;
++    char buf[256];
++    snprintf(buf, sizeof buf, "%s", v);
++    for (char *p = strtok(buf, ","); p; p = strtok(NULL, ",")) {
++        while (isspace((unsigned char)*p)) p++;
++        char *e = p + strlen(p);
++        while (e > p && isspace((unsigned char)e[-1])) *--e = 0;
++        if (!*p || !SDL_strcasecmp(p, "none")) continue;
++        int x = parse_input(p);
++        if (!x) { LOG("[config] line %d: \"%s\" is not a key or mouse button (or is taken)\n", line, p); return false; }
++        if (n < BIND_MAX) in[n++] = (uint16_t)x;
++    }
++    memcpy(g_config.binds[act], in, sizeof in);
++    bind_set[act] = true;
++    return true;
++}
++
++static char *trim(char *s);
++
+ static void set_key(const char *key, char *val, int line) {
+     char k[64], v[256];
+     snprintf(k, sizeof k, "%s", key);
+@@ -218,6 +294,11 @@ static void set_key(const char *key, char *val, int line) {
+     squash(k);
+     squash(v);
+     bool ok = true;
++    for (int i = 0; i < ACT_COUNT; i++)
++        if (!strcmp(k, bind_names[i])) {
++            if (!parse_binds(i, val, line)) LOG("[config] line %d: %s keeps its default keys\n", line, key);
++            return;
++        }
+     if (!strcmp(k, "mode")) {
+         if (!strcmp(v, "fullscreen") || !strcmp(v, "exclusive") || !strcmp(v, "exclusivefullscreen"))
+             g_config.display_mode = DISPLAY_FULLSCREEN;
+@@ -383,6 +464,25 @@ void config_load(void) {
+         append_missing_sections(path, seen);
+     }
+ 
++    // [Keyboard] actions the file leaves out (an older file, a deleted line): DEFAULT_INI's keys
++    for (const char *p = strstr(DEFAULT_INI, "[Keyboard]\n"); p && *p && strncmp(p, "\n[", 2);) {
++        const char *nl = strchr(p, '\n');
++        if (!nl) break;
++        char l[256];
++        snprintf(l, sizeof l, "%.*s", (int)(nl - p), p);
++        p = nl;
++        if (p[1] == '[') break;
++        p++;
++        char *eq = strchr(l, '=');
++        if (*l == ';' || *l == '[' || !eq) continue;
++        *eq = 0;
++        char k[64];
++        snprintf(k, sizeof k, "%s", trim(l));
++        squash(k);
++        for (int i = 0; i < ACT_COUNT; i++)
++            if (!strcmp(k, bind_names[i]) && !bind_set[i]) parse_binds(i, trim(eq + 1), 0);
++    }
++
+     const SDL_DisplayMode *dm = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay());
+     desktop_w = dm ? dm->w : 1920, desktop_h = dm ? dm->h : 1080;
+     if (!g_config.width) g_config.width = desktop_w, g_config.height = desktop_h;
+diff --git a/runtime/config.h b/runtime/config.h
+index f1624ee..9d28a66 100644
+--- a/runtime/config.h
++++ b/runtime/config.h
+@@ -5,6 +5,16 @@
+ enum { DISPLAY_WINDOWED, DISPLAY_FULLSCREEN, DISPLAY_BORDERLESS };
+ enum { FACE_POSITION, FACE_LABEL };
+ 
++// [Keyboard]: what presses each controller button (runtime/host_input.c). Actions 0-15 are the buttons (BTN_*,
++// hle/input.h), then the left stick's four directions, walking (half tilt) and the item bar's two directions.
++enum { ACT_MOVE_UP = 16, ACT_MOVE_DOWN, ACT_MOVE_LEFT, ACT_MOVE_RIGHT, ACT_WALK, ACT_ITEM_PREV, ACT_ITEM_NEXT, ACT_COUNT };
++// Inputs: a keyboard scancode (SDL_Scancode, below 512), a mouse button or a wheel direction.
++#define IN_MOUSE(n) (512 + (n))  // n: SDL_BUTTON_LEFT (1) .. SDL_BUTTON_X2 (5)
++#define IN_WHEEL_UP 520
++#define IN_WHEEL_DOWN 521
++#define IN_COUNT 522
++#define BIND_MAX 4
++
+ // [Monster HP]: factors on the HP multiplier of Hub-type quests' large monsters
+ #define HP_QUESTS_MAX 256
+ #define HP_SCALE_MIN 0.05f
+@@ -36,6 +46,7 @@ typedef struct {
+     float fov;                // 3D camera field of view factor (1: the game's)
+     int ui_anchor;            // where the HUD goes on a picture wider than 16:9: UI_*
+     int background_input;     // the controller keeps working while the window is in the background (runtime/ui.c)
++    uint16_t binds[ACT_COUNT][BIND_MAX];  // [Keyboard]: up to BIND_MAX inputs (IN_*, scancodes) each, 0 = none
+ } Config;
+ enum { UI_CENTER = 1, UI_21_9, UI_32_9, UI_EDGES };  // the middle 16:9, 21:9, 32:9, the picture's sides
+ 
+diff --git a/runtime/host_input.c b/runtime/host_input.c
+index 423d6c0..8ca94c6 100644
+--- a/runtime/host_input.c
++++ b/runtime/host_input.c
+@@ -1,563 +1,597 @@
+-// Host controls -> the Switch controller the game reads (runtime/hle/input.c).
+-//
+-// Keyboard and mouse: WASD left stick (Left Shift held: half tilt, walking), mouse movement right stick (camera; click
+-//   in the window to capture the mouse, Esc releases it), left click = X, right click = A, Space = B, R = Y, Q = L,
+-//   E = R, Tab = ZL, T = ZR, Enter = Plus, Backspace = Minus, arrow keys = d-pad, Ctrl = left stick click, Alt = right
+-//   stick click. While the game shows a text entry (names, chat) the keyboard types instead
+-//   (runtime/textinput.c). F12 saves a screenshot, F11 the next 8
+-//   frames (exact rendered pixels, run\shots\), F10 dumps every render pass of the next 2 frames (debug, slow), F9 toggles how colour clears are done (debug).
+-// Gamepad (SDL): face buttons by position as on a Switch controller (the bottom one is B), or by their labels
+-//   (settings FaceButtons, runtime/config.c; MHGU_PAD_POSITIONAL=0|1 overrides).
+-//   SDL calls other devices a gamepad too (a Steam Controller's puck, an analog keyboard's mouse interface) and the
+-//   first one it sees owns the input: MHGU_PAD=<part of the name> picks yours, and the log lists every one it finds.
+-// Scripted input (tests): MHGU_INPUT="frame:BUTTON:frames,..." holds BUTTON from that presented frame for that many
+-//   frames. BUTTON: A B X Y L R ZL ZR PLUS MINUS LEFT UP RIGHT DOWN LSTICK RSTICK, or STICK_UP/DOWN/LEFT/RIGHT and
+-//   RSTICK_UP/DOWN/LEFT/RIGHT (full tilt).
+-#include <math.h>
+-#include <stdlib.h>
+-#include <string.h>
+-#include <time.h>
+-
+-#include <SDL3/SDL.h>
+-
+-#include "config.h"
+-#include "forge.h"
+-#include "hle/input.h"
+-#include "overlay.h"
+-#include "rt.h"
+-#include "textinput.h"
+-
+-#define B(x) (1ull << (x))
+-
+-static bool keys[SDL_SCANCODE_COUNT];
+-static SDL_Gamepad *pad;
+-
+-static const struct { SDL_Scancode sc; int btn; } key_buttons[] = {
+-    {SDL_SCANCODE_SPACE, BTN_B}, {SDL_SCANCODE_R, BTN_Y},
+-    {SDL_SCANCODE_Q, BTN_L}, {SDL_SCANCODE_E, BTN_R}, {SDL_SCANCODE_TAB, BTN_ZL}, {SDL_SCANCODE_T, BTN_ZR},
+-    {SDL_SCANCODE_RETURN, BTN_PLUS}, {SDL_SCANCODE_KP_ENTER, BTN_PLUS}, {SDL_SCANCODE_BACKSPACE, BTN_MINUS},
+-    {SDL_SCANCODE_UP, BTN_UP}, {SDL_SCANCODE_LEFT, BTN_LEFT}, {SDL_SCANCODE_DOWN, BTN_DOWN}, {SDL_SCANCODE_RIGHT, BTN_RIGHT},
+-    {SDL_SCANCODE_LCTRL, BTN_LSTICK}, {SDL_SCANCODE_RCTRL, BTN_LSTICK},
+-    {SDL_SCANCODE_LALT, BTN_RSTICK}, {SDL_SCANCODE_RALT, BTN_RSTICK},
+-};
+-
+-// ---- mouse: captured (relative mode) after a click in the window, Esc lets it go. Its movement is the right stick:
+-// the speed it moves at, smoothed over a few milliseconds, as the stick's tilt (full tilt at MOUSE_FULL_SPEED counts a
+-// second, times the settings' MouseSensitivity). Left button X, right button A.
+-#define MOUSE_FULL_SPEED 1500.0f
+-#define MOUSE_SMOOTH_S 0.025f  // (the averaging time: mice report at 125-8000 Hz, the game reads at its frame rate)
+-// The camera ignores the right stick below about 39% tilt (any direction: a round dead zone; measured 2026-10-23, 38%
+-// still, 40% turning slowly, then faster up to full tilt): the mouse's tilt starts there, so slow movements turn too.
+-#define MOUSE_DEADZONE 0.40f
+-static bool mouse_grab;       // the player's choice: clicked in (true) or Esc / focus lost (false)
+-static bool mouse_captured;   // relative mode on now (grabbed, and no Forge menu open)
+-static bool mouse_no_capture; // relative mode refused (WSLg, some Wayland compositors): clicks are buttons, no mouse look
+-static float mouse_dx, mouse_dy;  // counts moved since the last update
+-static uint64_t mouse_buttons;
+-// (tests: the control file's "mousemove <x> <y> <ms>", a mouse moving at that many counts a second, captured or not)
+-static float test_vx, test_vy;
+-static uint64_t test_until;
+-
+-// ---- scripted input
+-typedef struct { uint64_t start, len; uint64_t buttons; int stick, x, y; } ScriptStep;
+-#define MAX_STEPS 4096
+-static ScriptStep script[MAX_STEPS];
+-static int nscript = -1;
+-
+-static const char *const button_names[] = {"A", "B", "X", "Y", "LSTICK", "RSTICK", "L", "R", "ZL", "ZR", "PLUS",
+-                                           "MINUS", "LEFT", "UP", "RIGHT", "DOWN"};
+-
+-// One step: BUTTON (or STICK_<dir> / RSTICK_<dir>) held from presented frame `start` for `len` frames.
+-static bool add_step(const char *name, uint64_t start, uint64_t len) {
+-    ScriptStep st = {start, len, 0, -1, 0, 0};
+-    const char *dir = NULL;
+-    if (!strncmp(name, "STICK_", 6)) st.stick = 0, dir = name + 6;
+-    else if (!strncmp(name, "RSTICK_", 7)) st.stick = 1, dir = name + 7;
+-    if (dir) {
+-        // UP, DOWN, LEFT, RIGHT or a diagonal (UPLEFT, DOWNRIGHT...)
+-        int dx = strstr(dir, "LEFT") ? -1 : strstr(dir, "RIGHT") ? 1 : 0, dy = strstr(dir, "DOWN") ? -1 : strstr(dir, "UP") ? 1 : 0;
+-        int m = dx && dy ? 23170 : 32767;  // (diagonals: full deflection, not beyond the circle)
+-        st.x = dx * m, st.y = dy * m;
+-    } else {
+-        int b = -1;
+-        for (int i = 0; i < 16; i++) if (!strcmp(name, button_names[i])) b = i;
+-        if (b < 0) return false;
+-        st.buttons = B(b);
+-    }
+-    if (nscript == MAX_STEPS) {  // (control file sessions: drop the steps that are over)
+-        int k = 0;
+-        for (int i = 0; i < nscript; i++) if (script[i].start + script[i].len > g_present_count) script[k++] = script[i];
+-        nscript = k;
+-        if (nscript == MAX_STEPS) return false;
+-    }
+-    script[nscript++] = st;
+-    return true;
+-}
+-
+-// Press BUTTON (as in MHGU_INPUT) from the next presented frame for `frames` frames. UI thread only (with
+-// host_input_update), like the control file.
+-bool host_input_press(const char *button, unsigned frames) {
+-    return add_step(button, g_present_count + 1, frames);
+-}
+-
+-static void script_parse(void) {
+-    nscript = 0;
+-    const char *s = getenv("MHGU_INPUT");
+-    if (!s) return;
+-    char *copy = strdup(s), *save = NULL;
+-    for (char *tok = strtok_r(copy, ",", &save); tok; tok = strtok_r(NULL, ",", &save)) {
+-        char name[32];
+-        unsigned long long start, len;
+-        if (sscanf(tok, "%llu:%31[^:]:%llu", &start, name, &len) != 3 || !add_step(name, start, len))
+-            LOG("[input] bad MHGU_INPUT step '%s'\n", tok);
+-    }
+-    free(copy);
+-    LOG("[input] scripted input: %d steps\n", nscript);
+-}
+-
+-// MHGU_CONTROL=<file>: commands appended to the file while the game runs (one per line), for driving it from outside:
+-//   <BUTTON> [frames] [delay]  press now, or that many presented frames from now (default 8 frames); STICK_UP 30 etc.
+-//                          as in MHGU_INPUT. Lines written together start from the same frame: a timed sequence.
+-//   shot <name>            save the next presented frame as shots/<name>.png
+-//   burst <n> <name>       save the next n presented frames as shots/<name>_<i>.png
+-//   dump [n]               save colour target 0 (or the depth of a depth-only pass) of every render pass of the next
+-//                          frame (shots/pass_*.png), or of the next n frames (shots/f<i>_pass_*.png for i >= 1)
+-//   frame                  log the current frame number
+-//   type <text>            type into the game's text entry (runtime/textinput.c); textkey enter|escape|backspace
+-//   mousemove <x> <y> <ms> mouse look as if the mouse moved at that many counts a second (y down) for that long
+-char g_shot_request[256];  // (runtime/nvn/vulkan/device.c saves it)
+-char g_burst_name[200];
+-int g_burst_left, g_burst_index;
+-volatile int g_dump_request;
+-static void control_poll(void) {
+-    static const char *path = (const char *)1;
+-    static long done;
+-    static uint64_t last_ns;
+-    if (path == (const char *)1) path = getenv("MHGU_CONTROL");
+-    if (!path) return;
+-    uint64_t now = plat_now_ns();
+-    if (now - last_ns < 50000000ull) return;
+-    last_ns = now;
+-    FILE *f = fopen(path, "rb");
+-    if (!f) return;
+-    fseek(f, 0, SEEK_END);
+-    long size = ftell(f);
+-    if (size < done) done = 0;  // (file replaced)
+-    if (size > done) {
+-        fseek(f, done, SEEK_SET);
+-        char line[300];
+-        while (ftell(f) < size && fgets(line, sizeof line, f)) {
+-            if (!strchr(line, '\n') && ftell(f) >= size) break;  // (partial last line: next time)
+-            done = ftell(f);
+-            char cmd[32] = "", arg[256] = "", arg2[200] = "";
+-            if (sscanf(line, "%31s %255s %199s", cmd, arg, arg2) < 1) continue;
+-            if (!strcmp(cmd, "msaa")) { void vk_set_msaa(uint32_t); vk_set_msaa((uint32_t)atoi(arg)); continue; }
+-            if (!strcmp(cmd, "gpuprof")) { extern volatile int g_gpuprof_request; g_gpuprof_request = 1; continue; }
+-            if (!strcmp(cmd, "dump")) { g_dump_request = atoi(arg) > 0 ? atoi(arg) : 1; continue; }
+-            if (!strcmp(cmd, "memsave")) {  // memsave <guest hex address> <hex bytes> <file>: raw guest memory to a file
+-                char path[200] = "";
+-                sscanf(line, "%*s %*s %*s %199s", path);
+-                uint32_t a = (uint32_t)strtoul(arg, NULL, 16), n = (uint32_t)strtoul(arg2, NULL, 16);
+-                FILE *o = path[0] && n <= (16u << 20) ? fopen(path, "wb") : NULL;
+-                if (o) { fwrite(G2H(a), 1, n, o); fclose(o); }
+-                LOG("[memsave] %08x+%x -> %s%s\n", a, n, path, o ? "" : " (failed)");
+-                continue;
+-            }
+-            if (!strcmp(cmd, "testhook")) {  // testhook <hex address>: a Forge plugin's kind of hook there (forge.c)
+-                forge_test_hook((uint32_t)strtoul(arg, NULL, 16));
+-                continue;
+-            }
+-            if (!strcmp(cmd, "poke")) {  // poke <guest hex address> <hex word>: write guest memory (reverse engineering)
+-                uint32_t a = (uint32_t)strtoul(arg, NULL, 16) & ~3u, v = (uint32_t)strtoul(arg2, NULL, 16);
+-                LOG("[poke] %08x: %08x -> %08x\n", a, LD32(a), v);
+-                ST32(a, v);
+-                continue;
+-            }
+-            if (!strcmp(cmd, "fntrace")) {  // fntrace <lo hex> <hi hex> [n]: log the next n calls of guest functions there
+-                void fntrace_set(uint32_t, uint32_t, int);
+-                char arg3[16] = "";
+-                sscanf(line, "%*s %*s %*s %15s", arg3);
+-                fntrace_set((uint32_t)strtoul(arg, NULL, 16), (uint32_t)strtoul(arg2, NULL, 16), arg3[0] ? atoi(arg3) : 200);
+-                continue;
+-            }
+-            if (!strcmp(cmd, "fnnew")) {  // fnnew <lo hex> <hi hex> [learn ms]: log first calls only (dispatch.c)
+-                void fnnew_set(uint32_t, uint32_t, int);
+-                char arg3[16] = "";
+-                sscanf(line, "%*s %*s %*s %15s", arg3);
+-                fnnew_set((uint32_t)strtoul(arg, NULL, 16), (uint32_t)strtoul(arg2, NULL, 16), atoi(arg3));
+-                continue;
+-            }
+-            if (!strcmp(cmd, "find")) {  // find <hex bytes>: log where they are in committed guest memory (first 32)
+-                uint8_t pat[100];
+-                int np = 0;
+-                for (const char *q = arg; q[0] && q[1] && np < 100; q += 2) {
+-                    char hx[3] = {q[0], q[1], 0};
+-                    pat[np++] = (uint8_t)strtoul(hx, NULL, 16);
+-                }
+-                int hits = 0;
+-                for (uint64_t a = 0x1000; np && a < GUEST_SPACE && hits < 32;) {
+-                    uint64_t end;
+-                    bool ok = plat_committed(GUEST_BASE + a, &end);
+-                    end -= GUEST_BASE;
+-                    if (end > GUEST_SPACE) end = GUEST_SPACE;
+-                    if (ok && end - a >= (uint64_t)np) {
+-                        const uint8_t *m = G2H((uint32_t)a);
+-                        for (uint64_t i = 0; i + np <= end - a && hits < 32; i++)
+-                            if (m[i] == pat[0] && !memcmp(m + i, pat, np)) LOG("[find] %08llx\n", (unsigned long long)(a + i)), hits++;
+-                    }
+-                    a = end;
+-                }
+-                LOG("[find] %d hit(s)\n", hits);
+-                continue;
+-            }
+-            if (!strcmp(cmd, "peek")) {  // peek <guest hex address> [words]: log guest memory (reverse engineering)
+-                uint32_t a = (uint32_t)strtoul(arg, NULL, 16) & ~3u;
+-                int nw = arg2[0] ? atoi(arg2) : 8;
+-                for (int k = 0; k < nw && k < 256; k += 4) {
+-                    char line[96];
+-                    int len = snprintf(line, sizeof line, "[peek] %08x:", a + 4 * k);
+-                    for (int j = k; j < nw && j < k + 4; j++) len += snprintf(line + len, sizeof line - len, " %08x", LD32(a + 4 * j));
+-                    LOG("%s\n", line);
+-                }
+-                continue;
+-            }
+-            if (!strcmp(cmd, "burst")) {
+-                snprintf(g_burst_name, sizeof g_burst_name, "%s", arg2[0] ? arg2 : "burst");
+-                g_burst_index = 0;
+-                g_burst_left = atoi(arg) > 0 ? atoi(arg) : 4;
+-                continue;
+-            }
+-            if (!strcmp(cmd, "type")) {
+-                char *t = line + strspn(line, " \t") + 4;
+-                t += strspn(t, " \t");
+-                t[strcspn(t, "\r\n")] = 0;
+-                textinput_type(t);
+-                continue;
+-            }
+-            if (!strcmp(cmd, "sdlkey")) {  // sdlkey [ctrl+]<SDL key name>: a key pressed and released (Insert: Forge's menu)
+-                bool ctrl = !SDL_strncasecmp(arg, "ctrl+", 5);
+-                SDL_Scancode sc = SDL_GetScancodeFromName(arg + (ctrl ? 5 : 0));
+-                SDL_Event e = {0};
+-                e.key.type = SDL_EVENT_KEY_DOWN, e.key.scancode = sc, e.key.key = SDL_GetKeyFromScancode(sc, 0, false);
+-                e.key.down = true, e.key.mod = ctrl ? SDL_KMOD_LCTRL : 0;
+-                SDL_PushEvent(&e);
+-                e.key.type = SDL_EVENT_KEY_UP, e.key.down = false;
+-                SDL_PushEvent(&e);
+-                if (ctrl) {  // (then Ctrl's own release, as a keyboard sends it: no modifier left)
+-                    e.key.scancode = SDL_SCANCODE_LCTRL, e.key.key = SDLK_LCTRL, e.key.mod = 0;
+-                    SDL_PushEvent(&e);
+-                }
+-                LOG("[control] key %s (%d)\n", arg, (int)sc);
+-                continue;
+-            }
+-            if (!strcmp(cmd, "sdltext")) {  // sdltext <text>: typed text, as the keyboard sends it (not the game's entry)
+-                static char text[256];
+-                snprintf(text, sizeof text, "%s", arg);
+-                SDL_Event e = {0};
+-                e.text.type = SDL_EVENT_TEXT_INPUT, e.text.text = text;
+-                SDL_PushEvent(&e);
+-                continue;
+-            }
+-            if (!strcmp(cmd, "mouse")) {  // mouse <x> <y> [click]: the pointer to (x, y) in the window, clicked there
+-                char arg3[16] = "";
+-                sscanf(line, "%*s %*s %*s %15s", arg3);
+-                SDL_Event e = {0};
+-                e.motion.type = SDL_EVENT_MOUSE_MOTION, e.motion.x = (float)atof(arg), e.motion.y = (float)atof(arg2);
+-                SDL_PushEvent(&e);
+-                if (!strcmp(arg3, "click")) {
+-                    SDL_Event b = {0};
+-                    b.button.type = SDL_EVENT_MOUSE_BUTTON_DOWN, b.button.button = SDL_BUTTON_LEFT, b.button.down = true;
+-                    b.button.x = e.motion.x, b.button.y = e.motion.y, b.button.clicks = 1;
+-                    SDL_PushEvent(&b);
+-                    b.button.type = SDL_EVENT_MOUSE_BUTTON_UP, b.button.down = false;
+-                    SDL_PushEvent(&b);
+-                }
+-                continue;
+-            }
+-            if (!strcmp(cmd, "mousemove")) {  // mousemove <x> <y> <ms>: mouse look at that speed (counts a second)
+-                char arg3[16] = "";
+-                sscanf(line, "%*s %*s %*s %15s", arg3);
+-                test_vx = (float)atof(arg), test_vy = (float)atof(arg2);
+-                test_until = plat_now_ns() + (uint64_t)atoi(arg3) * 1000000ull;
+-                continue;
+-            }
+-            if (!strcmp(cmd, "textkey")) {
+-                textinput_key(!strcmp(arg, "enter") ? TI_ENTER : !strcmp(arg, "escape") ? TI_CANCEL : TI_NONE);
+-                continue;
+-            }
+-            if (!strcmp(cmd, "shot")) {
+-                snprintf(g_shot_request, sizeof g_shot_request, "shots/%s.png", arg[0] ? arg : "control");
+-            } else if (!strcmp(cmd, "frame")) {
+-                LOG("[control] frame %llu\n", (unsigned long long)g_present_count);
+-            } else {
+-                unsigned long n = arg[0] ? strtoul(arg, NULL, 10) : 8, delay = strtoul(arg2, NULL, 10);
+-                uint64_t at = g_present_count + 1 + delay;
+-                if (!add_step(cmd, at, n ? n : 8)) LOG("[control] unknown command '%s'\n", cmd);
+-                else LOG("[control] %s %lu at frame %llu\n", cmd, n ? n : 8, (unsigned long long)at);
+-            }
+-        }
+-    }
+-    fclose(f);
+-}
+-// ---- events
+-// Which controller the game reads. SDL calls other devices a gamepad as well (a Steam Controller's puck, an analog
+-// keyboard's mouse interface) and the first one wins, which reads as stuck buttons and sticks: so every device is
+-// logged, and MHGU_PAD=<part of the name, case-insensitive> says which one to use.
+-static bool pad_matches(SDL_JoystickID id) {
+-    const char *sel = getenv("MHGU_PAD");
+-    if (!sel || !*sel) return true;
+-    unsigned vid = 0, pid = 0;  // "28de:1142" matches the ids, anything else part of the name
+-    if (sscanf(sel, "%4x:%4x", &vid, &pid) == 2)
+-        return SDL_GetGamepadVendorForID(id) == vid && SDL_GetGamepadProductForID(id) == pid;
+-    const char *name = SDL_GetGamepadNameForID(id);
+-    return name && SDL_strcasestr(name, sel);
+-}
+-
+-static void log_pad(SDL_JoystickID id, const char *tag) {
+-    const char *name = SDL_GetGamepadNameForID(id);
+-    LOG("[input] %s: %s (%04x:%04x), SDL mapping %s\n", tag, name ? name : "?", SDL_GetGamepadVendorForID(id),
+-        SDL_GetGamepadProductForID(id), SDL_GetGamepadMappingForID(id) ? "known" : "NONE (SDL guesses the buttons)");
+-}
+-
+-static void open_pad(SDL_JoystickID id) {
+-    if (pad) { log_pad(id, "gamepad appeared, keeping the one in use"); return; }
+-    if (!pad_matches(id)) { log_pad(id, "gamepad skipped (MHGU_PAD)"); return; }
+-    pad = SDL_OpenGamepad(id);
+-    if (pad) log_pad(id, "gamepad in use");
+-}
+-
+-static void pick_pad(void) {  // over every controller SDL sees now: MHGU_PAD picks, else the first
+-    int n = 0;
+-    SDL_JoystickID *ids = SDL_GetGamepads(&n);
+-    for (int i = 0; i < n; i++) open_pad(ids[i]);
+-    SDL_free(ids);
+-}
+-
+-void host_input_event(const SDL_Event *e) {
+-    if (overlay_event(e)) return;  // (Forge's menu open: keyboard and mouse are its)
+-    if (textinput_event(e)) return;  // (typing into a text entry: not controller buttons)
+-    switch (e->type) {
+-    case SDL_EVENT_KEY_DOWN: case SDL_EVENT_KEY_UP:
+-        if (e->key.scancode < SDL_SCANCODE_COUNT) keys[e->key.scancode] = e->type == SDL_EVENT_KEY_DOWN;
+-        if (e->type == SDL_EVENT_KEY_DOWN && !e->key.repeat) {  // F12: screenshot, F11: 8 consecutive frames (run\shots\)
+-            static int nshot;
+-            uint64_t t = (uint64_t)time(NULL);
+-            if ((e->key.scancode == SDL_SCANCODE_RETURN || e->key.scancode == SDL_SCANCODE_KP_ENTER) && (e->key.mod & SDL_KMOD_ALT)) {
+-                keys[e->key.scancode] = false;  // (Alt+Enter: windowed <-> full screen, not a button press)
+-                keys[SDL_SCANCODE_LALT] = keys[SDL_SCANCODE_RALT] = false;
+-                ui_toggle_fullscreen();
+-            } else if (e->key.scancode == SDL_SCANCODE_ESCAPE) {
+-                if (mouse_grab) LOG("[input] mouse released\n");
+-                mouse_grab = false;
+-            } else if (e->key.scancode == SDL_SCANCODE_F12)
+-                snprintf(g_shot_request, sizeof g_shot_request, "shots/shot_%llu_%d.png", (unsigned long long)t, nshot++);
+-            else if (e->key.scancode == SDL_SCANCODE_F11) {
+-                snprintf(g_burst_name, sizeof g_burst_name, "burst_%llu_%d", (unsigned long long)t, nshot++);
+-                g_burst_index = 0;
+-                g_burst_left = 8;
+-            } else if (e->key.scancode == SDL_SCANCODE_F10) {
+-                g_dump_request = 2;  // (debug) every render pass of the next 2 frames, as "dump 2"
+-            } else if (e->key.scancode == SDL_SCANCODE_F7) {  // MSAA off / 2x / 4x / 8x (to compare; the settings set it)
+-                void vk_cycle_msaa(void);
+-                vk_cycle_msaa();
+-            } else if (e->key.scancode == SDL_SCANCODE_F8) {  // (debug) shadow-pass scissors: as set / none / mirrored
+-                extern volatile int g_shadow_scissor_mode;
+-                g_shadow_scissor_mode = (g_shadow_scissor_mode + 1) % 3;
+-                LOG("[input] F8: shadow scissor mode %d\n", g_shadow_scissor_mode);
+-            } else if (e->key.scancode == SDL_SCANCODE_F9) {  // (debug) colour clears: vkCmdClearAttachments <-> draws
+-                extern volatile int g_clear_draw;
+-                g_clear_draw = g_clear_draw > 0 ? 0 : 1;
+-                LOG("[input] F9: colour clears as %s\n", g_clear_draw ? "draws" : "vkCmdClearAttachments");
+-            }
+-        }
+-        break;
+-    case SDL_EVENT_MOUSE_MOTION:
+-        if (mouse_captured) mouse_dx += e->motion.xrel, mouse_dy += e->motion.yrel;
+-        break;
+-    case SDL_EVENT_MOUSE_BUTTON_DOWN: case SDL_EVENT_MOUSE_BUTTON_UP: {
+-        int btn = e->button.button == SDL_BUTTON_LEFT ? BTN_X : e->button.button == SDL_BUTTON_RIGHT ? BTN_A : -1;
+-        if (btn < 0) break;
+-        if (!e->button.down) {
+-            mouse_buttons &= ~B(btn);
+-        } else if (!mouse_captured && !mouse_no_capture) {  // (the click that captures the mouse is not a button press)
+-            if (!mouse_grab) LOG("[input] capturing the mouse\n");
+-            mouse_grab = true;
+-        } else {
+-            mouse_buttons |= B(btn);
+-        }
+-        break;
+-    }
+-    case SDL_EVENT_WINDOW_FOCUS_LOST:
+-        memset(keys, 0, sizeof keys);
+-        mouse_buttons = 0, mouse_grab = false;
+-        break;
+-    case SDL_EVENT_GAMEPAD_ADDED:
+-        open_pad(e->gdevice.which);
+-        break;
+-    case SDL_EVENT_GAMEPAD_REMOVED:
+-        if (pad && SDL_GetGamepadID(pad) == e->gdevice.which) {
+-            log_pad(e->gdevice.which, "gamepad removed");
+-            SDL_CloseGamepad(pad);
+-            pad = NULL;
+-            pick_pad();
+-        }
+-        break;
+-    }
+-}
+-
+-static int32_t clamp_axis(int v) { return v < -32767 ? -32767 : v > 32767 ? 32767 : v; }
+-
+-// Capture or release the mouse as wanted, and add its movement to the right stick.
+-static void mouse_update(int *rx, int *ry) {
+-    bool want = mouse_grab && !overlay_menu_open();  // (Forge's menu: the pointer is its)
+-    SDL_Window *w = ui_window();
+-    if (want != mouse_captured && w) {
+-        if (SDL_SetWindowRelativeMouseMode(w, want) || !want) {
+-            mouse_captured = want;
+-        } else {
+-            LOG("[input] mouse capture failed: %s (no mouse look; clicks are buttons)\n", SDL_GetError());
+-            mouse_grab = false, mouse_no_capture = true;
+-        }
+-        mouse_dx = mouse_dy = 0;
+-    }
+-    static uint64_t last;
+-    static float vx, vy;  // the speed, smoothed: counts a second
+-    uint64_t now = plat_now_ns();
+-    float dt = last ? (float)(now - last) * 1e-9f : 0.0f;
+-    last = now;
+-    if (dt > 0.1f) dt = 0.1f;
+-    if (now < test_until) mouse_dx += test_vx * dt, mouse_dy += test_vy * dt;
+-    if (dt > 0.0f) {
+-        float a = 1.0f - expf(-dt / MOUSE_SMOOTH_S);
+-        vx += (mouse_dx / dt - vx) * a, vy += (mouse_dy / dt - vy) * a;
+-    }
+-    mouse_dx = mouse_dy = 0;
+-    if (!mouse_captured && now >= test_until) vx = vy = 0;
+-    float s = g_config.mouse_sensitivity / MOUSE_FULL_SPEED;
+-    float x = vx * s, y = -vy * s;  // (the mouse's y is down, the stick's up)
+-    float m = sqrtf(x * x + y * y);
+-    if (m < 0.02f) return;
+-    float t = (MOUSE_DEADZONE + (1.0f - MOUSE_DEADZONE) * (m > 1.0f ? 1.0f : m)) / m;
+-    *rx += (int)(x * t * 32767.0f), *ry += (int)(y * t * 32767.0f);
+-}
+-
+-void host_input_update(void) {
+-    if (nscript < 0) script_parse();
+-    control_poll();
+-    quickhunt_poll();  // (debug, MHGU_QUICKHUNT: runtime/hle/quickhunt.c)
+-    textinput_update();
+-    uint64_t b = 0;
+-    int lx = 0, ly = 0, rx = 0, ry = 0;
+-    static bool typing;
+-    if (textinput_active() != typing) {
+-        typing = !typing;
+-        memset(keys, 0, sizeof keys);  // (keys held when the entry opened are typing now, or released)
+-    }
+-
+-    for (unsigned i = 0; i < sizeof key_buttons / sizeof *key_buttons; i++)
+-        if (keys[key_buttons[i].sc]) b |= B(key_buttons[i].btn);
+-    int kx = keys[SDL_SCANCODE_D] - keys[SDL_SCANCODE_A], ky = keys[SDL_SCANCODE_W] - keys[SDL_SCANCODE_S];
+-    int k = keys[SDL_SCANCODE_LSHIFT] ? 16000 : 32767;
+-    if (kx && ky) k = k * 7071 / 10000;  // diagonals: same length as straight
+-    lx += kx * k, ly += ky * k;
+-    b |= mouse_buttons;
+-    mouse_update(&rx, &ry);
+-
+-    if (pad) {
+-        static const struct { SDL_GamepadButton sdl; int btn; } pad_buttons[] = {
+-            {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, BTN_L}, {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, BTN_R},
+-            {SDL_GAMEPAD_BUTTON_START, BTN_PLUS}, {SDL_GAMEPAD_BUTTON_BACK, BTN_MINUS},
+-            {SDL_GAMEPAD_BUTTON_DPAD_UP, BTN_UP}, {SDL_GAMEPAD_BUTTON_DPAD_DOWN, BTN_DOWN},
+-            {SDL_GAMEPAD_BUTTON_DPAD_LEFT, BTN_LEFT}, {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, BTN_RIGHT},
+-            {SDL_GAMEPAD_BUTTON_LEFT_STICK, BTN_LSTICK}, {SDL_GAMEPAD_BUTTON_RIGHT_STICK, BTN_RSTICK},
+-        };
+-        for (unsigned i = 0; i < sizeof pad_buttons / sizeof *pad_buttons; i++)
+-            if (SDL_GetGamepadButton(pad, pad_buttons[i].sdl)) b |= B(pad_buttons[i].btn);
+-        // face buttons: SDL names them by position (south, east, west, north). Settings FaceButtons: Position = the
+-        // Switch layout; Label = the letter on the button (PlayStation symbols as an Xbox pad's letters at that place)
+-        static const SDL_GamepadButton face[4] = {SDL_GAMEPAD_BUTTON_SOUTH, SDL_GAMEPAD_BUTTON_EAST, SDL_GAMEPAD_BUTTON_WEST,
+-                                                  SDL_GAMEPAD_BUTTON_NORTH};
+-        static const int switch_at[4] = {BTN_B, BTN_A, BTN_Y, BTN_X}, xbox_at[4] = {BTN_A, BTN_B, BTN_X, BTN_Y};
+-        for (int i = 0; i < 4; i++) {
+-            if (!SDL_GetGamepadButton(pad, face[i])) continue;
+-            int btn = switch_at[i];
+-            if (g_config.face_buttons == FACE_LABEL) {
+-                switch (SDL_GetGamepadButtonLabel(pad, face[i])) {
+-                case SDL_GAMEPAD_BUTTON_LABEL_A: btn = BTN_A; break;
+-                case SDL_GAMEPAD_BUTTON_LABEL_B: btn = BTN_B; break;
+-                case SDL_GAMEPAD_BUTTON_LABEL_X: btn = BTN_X; break;
+-                case SDL_GAMEPAD_BUTTON_LABEL_Y: btn = BTN_Y; break;
+-                default: btn = xbox_at[i]; break;
+-                }
+-            }
+-            b |= B(btn);
+-        }
+-        if (SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) > 8000) b |= B(BTN_ZL);
+-        if (SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) > 8000) b |= B(BTN_ZR);
+-        // sticks: SDL's y is down; a small dead zone against drift
+-        int ax[4] = {SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFTX), -SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFTY),
+-                     SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHTX), -SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHTY)};
+-        for (int i = 0; i < 4; i++)
+-            if (ax[i] > -3000 && ax[i] < 3000) ax[i] = 0;
+-        lx += ax[0], ly += ax[1], rx += ax[2], ry += ax[3];
+-        static const char *dbg;  // (MHGU_PAD_DEBUG=1) every raw SDL controller change: finds a button that presses itself
+-        if (!dbg) dbg = getenv("MHGU_PAD_DEBUG") ? "1" : "";
+-        if (*dbg) {
+-            static uint64_t pbtn;
+-            static int pax[6];
+-            uint64_t cb = 0;
+-            for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++)
+-                if (SDL_GetGamepadButton(pad, (SDL_GamepadButton)i)) cb |= 1ull << i;
+-            int dax[6];
+-            for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; i++) dax[i] = SDL_GetGamepadAxis(pad, (SDL_GamepadAxis)i);
+-            for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++)
+-                if ((cb ^ pbtn) & (1ull << i))
+-                    LOG("[paddebug] %s %s\n", SDL_GetGamepadStringForButton((SDL_GamepadButton)i),
+-                        (cb >> i) & 1 ? "down" : "up");
+-            pbtn = cb;
+-            for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; i++)
+-                if (dax[i] != pax[i] && (dax[i] > 500 || dax[i] < -500 || pax[i] > 500 || pax[i] < -500))
+-                    LOG("[paddebug] axis %s %d\n", SDL_GetGamepadStringForAxis((SDL_GamepadAxis)i), dax[i]);
+-            for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; i++) pax[i] = dax[i];
+-        }
+-    } else {
+-        static bool scanned;  // (controllers present at startup send no ADDED event to a loop that started after them)
+-        if (!scanned) scanned = true, pick_pad();
+-    }
+-
+-    uint64_t frame = g_present_count;
+-    for (int i = 0; i < nscript; i++) {
+-        const ScriptStep *st = &script[i];
+-        if (frame < st->start || frame >= st->start + st->len) continue;
+-        b |= st->buttons;
+-        if (st->stick == 0) lx = st->x, ly = st->y;
+-        if (st->stick == 1) rx = st->x, ry = st->y;
+-    }
+-
+-    static bool menu;
+-    if (overlay_menu_open() != menu) {
+-        menu = !menu;
+-        memset(keys, 0, sizeof keys);  // (keys held as it opened went to the menu: nothing stays pressed)
+-        mouse_buttons = 0;
+-    }
+-    if (menu) {  // Forge's menu has the controller (as in Forge: A activates, B cancels, stick and d-pad move)
+-        OverlayPad p = {b & B(BTN_A), b & B(BTN_B), b & B(BTN_X), b & B(BTN_Y), b & B(BTN_UP), b & B(BTN_DOWN),
+-                        b & B(BTN_LEFT), b & B(BTN_RIGHT), b & B(BTN_L), b & B(BTN_R), b & B(BTN_PLUS),
+-                        b & B(BTN_MINUS), clamp_axis(lx) / 32767.0f, clamp_axis(ly) / 32767.0f};
+-        overlay_pad(&p);
+-        b = 0, lx = ly = rx = ry = 0;
+-    }
+-
+-    static uint64_t was;
+-    uint64_t down = b & ~was;
+-    was = b;
+-    if (typing) {  // Plus (Start) confirms, B cancels the entry; the game keeps the rest of the controller. Dropping it
+-                   // whole read as a lock-up: with no keyboard on screen (the game's own inline keyboard needs
+-                   // nativeNX/arc/swkbd_eu.arc, which is missing), a pad-only player had no way out - B only reopened
+-                   // the entry.
+-        if (down & B(BTN_PLUS)) textinput_key(TI_ENTER);
+-        else if (down & B(BTN_B)) textinput_key(TI_CANCEL);
+-        b &= ~(B(BTN_PLUS) | B(BTN_B));
+-    }
+-    input_set(b, clamp_axis(lx), clamp_axis(ly), clamp_axis(rx), clamp_axis(ry));
+-}
++// Host controls -> the Switch controller the game reads (runtime/hle/input.c).
++//
++// Keyboard and mouse: the settings' [Keyboard] keys (runtime/config.c; by default WASD left stick, Left Shift held
++//   half tilt (walking), left click = X, right click = A, Space = B, R = Y, Q / middle click = L, E = R, Tab = ZL,
++//   T = ZR, Enter = Plus, Backspace = Minus, arrow keys = d-pad, Ctrl / Alt = left / right stick click, the wheel
++//   scrolls the item bar). Mouse movement is the right stick (camera; click in the window to capture the mouse, Esc
++//   releases it). While the game shows a text entry (names, chat) the keyboard types instead
++//   (runtime/textinput.c). F12 saves a screenshot, F11 the next 8
++//   frames (exact rendered pixels, run\shots\), F10 dumps every render pass of the next 2 frames (debug, slow), F9 toggles how colour clears are done (debug).
++// Gamepad (SDL): face buttons by position as on a Switch controller (the bottom one is B), or by their labels
++//   (settings FaceButtons, runtime/config.c; MHGU_PAD_POSITIONAL=0|1 overrides).
++//   SDL calls other devices a gamepad too (a Steam Controller's puck, an analog keyboard's mouse interface) and the
++//   first one it sees owns the input: MHGU_PAD=<part of the name> picks yours, and the log lists every one it finds.
++// Scripted input (tests): MHGU_INPUT="frame:BUTTON:frames,..." holds BUTTON from that presented frame for that many
++//   frames. BUTTON: A B X Y L R ZL ZR PLUS MINUS LEFT UP RIGHT DOWN LSTICK RSTICK, or STICK_UP/DOWN/LEFT/RIGHT and
++//   RSTICK_UP/DOWN/LEFT/RIGHT (full tilt).
++#include <math.h>
++#include <stdlib.h>
++#include <string.h>
++#include <time.h>
++
++#include <SDL3/SDL.h>
++
++#include "config.h"
++#include "forge.h"
++#include "hle/input.h"
++#include "overlay.h"
++#include "rt.h"
++#include "textinput.h"
++
++#define B(x) (1ull << (x))
++
++// Inputs held now: keyboard scancodes, then the mouse buttons (IN_MOUSE, config.h). The wheel has no "held": each
++// notch holds its input for WHEEL_HOLD_NS.
++static bool keys[IN_COUNT];
++static SDL_Gamepad *pad;
++#define WHEEL_HOLD_NS 90000000ull
++static uint64_t wheel_until[2];  // IN_WHEEL_UP, IN_WHEEL_DOWN
++
++static bool input_down(int in, uint64_t now) {
++    if (in == IN_WHEEL_UP || in == IN_WHEEL_DOWN) return now < wheel_until[in - IN_WHEEL_UP];
++    return in > 0 && in < IN_COUNT && keys[in];
++}
++static bool action_down(int act, uint64_t now) {
++    for (int i = 0; i < BIND_MAX; i++)
++        if (input_down(g_config.binds[act][i], now)) return true;
++    return false;
++}
++
++// The item bar is scrolled by L + Y (back) or L + A (on), as on the controller: L first, the face button a moment
++// later, both let go together, so the game sees a combination and not a camera reset (L alone).
++#define ITEM_L_NS 40000000ull      // L held alone first
++#define ITEM_PRESS_NS 70000000ull  // then Y / A with it
++static uint64_t item_start;
++static int item_btn = -1;
++
++// ---- mouse: captured (relative mode) after a click in the window, Esc lets it go. Its movement is the right stick:
++// the speed it moves at, smoothed over a few milliseconds, as the stick's tilt (full tilt at MOUSE_FULL_SPEED counts a
++// second, times the settings' MouseSensitivity). Left button X, right button A.
++#define MOUSE_FULL_SPEED 1500.0f
++#define MOUSE_SMOOTH_S 0.025f  // (the averaging time: mice report at 125-8000 Hz, the game reads at its frame rate)
++// The camera ignores the right stick below about 39% tilt (any direction: a round dead zone; measured 2026-10-23, 38%
++// still, 40% turning slowly, then faster up to full tilt): the mouse's tilt starts there, so slow movements turn too.
++#define MOUSE_DEADZONE 0.40f
++static bool mouse_grab;       // the player's choice: clicked in (true) or Esc / focus lost (false)
++static bool mouse_captured;   // relative mode on now (grabbed, and no Forge menu open)
++static bool mouse_no_capture; // relative mode refused (WSLg, some Wayland compositors): clicks are buttons, no mouse look
++static float mouse_dx, mouse_dy;  // counts moved since the last update
++// (tests: the control file's "mousemove <x> <y> <ms>", a mouse moving at that many counts a second, captured or not)
++static float test_vx, test_vy;
++static uint64_t test_until;
++
++// ---- scripted input
++typedef struct { uint64_t start, len; uint64_t buttons; int stick, x, y; } ScriptStep;
++#define MAX_STEPS 4096
++static ScriptStep script[MAX_STEPS];
++static int nscript = -1;
++
++static const char *const button_names[] = {"A", "B", "X", "Y", "LSTICK", "RSTICK", "L", "R", "ZL", "ZR", "PLUS",
++                                           "MINUS", "LEFT", "UP", "RIGHT", "DOWN"};
++
++// One step: BUTTON (or STICK_<dir> / RSTICK_<dir>) held from presented frame `start` for `len` frames.
++static bool add_step(const char *name, uint64_t start, uint64_t len) {
++    ScriptStep st = {start, len, 0, -1, 0, 0};
++    const char *dir = NULL;
++    if (!strncmp(name, "STICK_", 6)) st.stick = 0, dir = name + 6;
++    else if (!strncmp(name, "RSTICK_", 7)) st.stick = 1, dir = name + 7;
++    if (dir) {
++        // UP, DOWN, LEFT, RIGHT or a diagonal (UPLEFT, DOWNRIGHT...)
++        int dx = strstr(dir, "LEFT") ? -1 : strstr(dir, "RIGHT") ? 1 : 0, dy = strstr(dir, "DOWN") ? -1 : strstr(dir, "UP") ? 1 : 0;
++        int m = dx && dy ? 23170 : 32767;  // (diagonals: full deflection, not beyond the circle)
++        st.x = dx * m, st.y = dy * m;
++    } else {
++        int b = -1;
++        for (int i = 0; i < 16; i++) if (!strcmp(name, button_names[i])) b = i;
++        if (b < 0) return false;
++        st.buttons = B(b);
++    }
++    if (nscript == MAX_STEPS) {  // (control file sessions: drop the steps that are over)
++        int k = 0;
++        for (int i = 0; i < nscript; i++) if (script[i].start + script[i].len > g_present_count) script[k++] = script[i];
++        nscript = k;
++        if (nscript == MAX_STEPS) return false;
++    }
++    script[nscript++] = st;
++    return true;
++}
++
++// Press BUTTON (as in MHGU_INPUT) from the next presented frame for `frames` frames. UI thread only (with
++// host_input_update), like the control file.
++bool host_input_press(const char *button, unsigned frames) {
++    return add_step(button, g_present_count + 1, frames);
++}
++
++static void script_parse(void) {
++    nscript = 0;
++    const char *s = getenv("MHGU_INPUT");
++    if (!s) return;
++    char *copy = strdup(s), *save = NULL;
++    for (char *tok = strtok_r(copy, ",", &save); tok; tok = strtok_r(NULL, ",", &save)) {
++        char name[32];
++        unsigned long long start, len;
++        if (sscanf(tok, "%llu:%31[^:]:%llu", &start, name, &len) != 3 || !add_step(name, start, len))
++            LOG("[input] bad MHGU_INPUT step '%s'\n", tok);
++    }
++    free(copy);
++    LOG("[input] scripted input: %d steps\n", nscript);
++}
++
++// MHGU_CONTROL=<file>: commands appended to the file while the game runs (one per line), for driving it from outside:
++//   <BUTTON> [frames] [delay]  press now, or that many presented frames from now (default 8 frames); STICK_UP 30 etc.
++//                          as in MHGU_INPUT. Lines written together start from the same frame: a timed sequence.
++//   shot <name>            save the next presented frame as shots/<name>.png
++//   burst <n> <name>       save the next n presented frames as shots/<name>_<i>.png
++//   dump [n]               save colour target 0 (or the depth of a depth-only pass) of every render pass of the next
++//                          frame (shots/pass_*.png), or of the next n frames (shots/f<i>_pass_*.png for i >= 1)
++//   frame                  log the current frame number
++//   type <text>            type into the game's text entry (runtime/textinput.c); textkey enter|escape|backspace
++//   mousemove <x> <y> <ms> mouse look as if the mouse moved at that many counts a second (y down) for that long
++char g_shot_request[256];  // (runtime/nvn/vulkan/device.c saves it)
++char g_burst_name[200];
++int g_burst_left, g_burst_index;
++volatile int g_dump_request;
++static void control_poll(void) {
++    static const char *path = (const char *)1;
++    static long done;
++    static uint64_t last_ns;
++    if (path == (const char *)1) path = getenv("MHGU_CONTROL");
++    if (!path) return;
++    uint64_t now = plat_now_ns();
++    if (now - last_ns < 50000000ull) return;
++    last_ns = now;
++    FILE *f = fopen(path, "rb");
++    if (!f) return;
++    fseek(f, 0, SEEK_END);
++    long size = ftell(f);
++    if (size < done) done = 0;  // (file replaced)
++    if (size > done) {
++        fseek(f, done, SEEK_SET);
++        char line[300];
++        while (ftell(f) < size && fgets(line, sizeof line, f)) {
++            if (!strchr(line, '\n') && ftell(f) >= size) break;  // (partial last line: next time)
++            done = ftell(f);
++            char cmd[32] = "", arg[256] = "", arg2[200] = "";
++            if (sscanf(line, "%31s %255s %199s", cmd, arg, arg2) < 1) continue;
++            if (!strcmp(cmd, "msaa")) { void vk_set_msaa(uint32_t); vk_set_msaa((uint32_t)atoi(arg)); continue; }
++            if (!strcmp(cmd, "gpuprof")) { extern volatile int g_gpuprof_request; g_gpuprof_request = 1; continue; }
++            if (!strcmp(cmd, "dump")) { g_dump_request = atoi(arg) > 0 ? atoi(arg) : 1; continue; }
++            if (!strcmp(cmd, "memsave")) {  // memsave <guest hex address> <hex bytes> <file>: raw guest memory to a file
++                char path[200] = "";
++                sscanf(line, "%*s %*s %*s %199s", path);
++                uint32_t a = (uint32_t)strtoul(arg, NULL, 16), n = (uint32_t)strtoul(arg2, NULL, 16);
++                FILE *o = path[0] && n <= (16u << 20) ? fopen(path, "wb") : NULL;
++                if (o) { fwrite(G2H(a), 1, n, o); fclose(o); }
++                LOG("[memsave] %08x+%x -> %s%s\n", a, n, path, o ? "" : " (failed)");
++                continue;
++            }
++            if (!strcmp(cmd, "testhook")) {  // testhook <hex address>: a Forge plugin's kind of hook there (forge.c)
++                forge_test_hook((uint32_t)strtoul(arg, NULL, 16));
++                continue;
++            }
++            if (!strcmp(cmd, "poke")) {  // poke <guest hex address> <hex word>: write guest memory (reverse engineering)
++                uint32_t a = (uint32_t)strtoul(arg, NULL, 16) & ~3u, v = (uint32_t)strtoul(arg2, NULL, 16);
++                LOG("[poke] %08x: %08x -> %08x\n", a, LD32(a), v);
++                ST32(a, v);
++                continue;
++            }
++            if (!strcmp(cmd, "fntrace")) {  // fntrace <lo hex> <hi hex> [n]: log the next n calls of guest functions there
++                void fntrace_set(uint32_t, uint32_t, int);
++                char arg3[16] = "";
++                sscanf(line, "%*s %*s %*s %15s", arg3);
++                fntrace_set((uint32_t)strtoul(arg, NULL, 16), (uint32_t)strtoul(arg2, NULL, 16), arg3[0] ? atoi(arg3) : 200);
++                continue;
++            }
++            if (!strcmp(cmd, "fnnew")) {  // fnnew <lo hex> <hi hex> [learn ms]: log first calls only (dispatch.c)
++                void fnnew_set(uint32_t, uint32_t, int);
++                char arg3[16] = "";
++                sscanf(line, "%*s %*s %*s %15s", arg3);
++                fnnew_set((uint32_t)strtoul(arg, NULL, 16), (uint32_t)strtoul(arg2, NULL, 16), atoi(arg3));
++                continue;
++            }
++            if (!strcmp(cmd, "find")) {  // find <hex bytes>: log where they are in committed guest memory (first 32)
++                uint8_t pat[100];
++                int np = 0;
++                for (const char *q = arg; q[0] && q[1] && np < 100; q += 2) {
++                    char hx[3] = {q[0], q[1], 0};
++                    pat[np++] = (uint8_t)strtoul(hx, NULL, 16);
++                }
++                int hits = 0;
++                for (uint64_t a = 0x1000; np && a < GUEST_SPACE && hits < 32;) {
++                    uint64_t end;
++                    bool ok = plat_committed(GUEST_BASE + a, &end);
++                    end -= GUEST_BASE;
++                    if (end > GUEST_SPACE) end = GUEST_SPACE;
++                    if (ok && end - a >= (uint64_t)np) {
++                        const uint8_t *m = G2H((uint32_t)a);
++                        for (uint64_t i = 0; i + np <= end - a && hits < 32; i++)
++                            if (m[i] == pat[0] && !memcmp(m + i, pat, np)) LOG("[find] %08llx\n", (unsigned long long)(a + i)), hits++;
++                    }
++                    a = end;
++                }
++                LOG("[find] %d hit(s)\n", hits);
++                continue;
++            }
++            if (!strcmp(cmd, "peek")) {  // peek <guest hex address> [words]: log guest memory (reverse engineering)
++                uint32_t a = (uint32_t)strtoul(arg, NULL, 16) & ~3u;
++                int nw = arg2[0] ? atoi(arg2) : 8;
++                for (int k = 0; k < nw && k < 256; k += 4) {
++                    char line[96];
++                    int len = snprintf(line, sizeof line, "[peek] %08x:", a + 4 * k);
++                    for (int j = k; j < nw && j < k + 4; j++) len += snprintf(line + len, sizeof line - len, " %08x", LD32(a + 4 * j));
++                    LOG("%s\n", line);
++                }
++                continue;
++            }
++            if (!strcmp(cmd, "burst")) {
++                snprintf(g_burst_name, sizeof g_burst_name, "%s", arg2[0] ? arg2 : "burst");
++                g_burst_index = 0;
++                g_burst_left = atoi(arg) > 0 ? atoi(arg) : 4;
++                continue;
++            }
++            if (!strcmp(cmd, "type")) {
++                char *t = line + strspn(line, " \t") + 4;
++                t += strspn(t, " \t");
++                t[strcspn(t, "\r\n")] = 0;
++                textinput_type(t);
++                continue;
++            }
++            if (!strcmp(cmd, "sdlkey")) {  // sdlkey [ctrl+]<SDL key name>: a key pressed and released (Insert: Forge's menu)
++                bool ctrl = !SDL_strncasecmp(arg, "ctrl+", 5);
++                SDL_Scancode sc = SDL_GetScancodeFromName(arg + (ctrl ? 5 : 0));
++                SDL_Event e = {0};
++                e.key.type = SDL_EVENT_KEY_DOWN, e.key.scancode = sc, e.key.key = SDL_GetKeyFromScancode(sc, 0, false);
++                e.key.down = true, e.key.mod = ctrl ? SDL_KMOD_LCTRL : 0;
++                SDL_PushEvent(&e);
++                e.key.type = SDL_EVENT_KEY_UP, e.key.down = false;
++                SDL_PushEvent(&e);
++                if (ctrl) {  // (then Ctrl's own release, as a keyboard sends it: no modifier left)
++                    e.key.scancode = SDL_SCANCODE_LCTRL, e.key.key = SDLK_LCTRL, e.key.mod = 0;
++                    SDL_PushEvent(&e);
++                }
++                LOG("[control] key %s (%d)\n", arg, (int)sc);
++                continue;
++            }
++            if (!strcmp(cmd, "sdltext")) {  // sdltext <text>: typed text, as the keyboard sends it (not the game's entry)
++                static char text[256];
++                snprintf(text, sizeof text, "%s", arg);
++                SDL_Event e = {0};
++                e.text.type = SDL_EVENT_TEXT_INPUT, e.text.text = text;
++                SDL_PushEvent(&e);
++                continue;
++            }
++            if (!strcmp(cmd, "mouse")) {  // mouse <x> <y> [click]: the pointer to (x, y) in the window, clicked there
++                char arg3[16] = "";
++                sscanf(line, "%*s %*s %*s %15s", arg3);
++                SDL_Event e = {0};
++                e.motion.type = SDL_EVENT_MOUSE_MOTION, e.motion.x = (float)atof(arg), e.motion.y = (float)atof(arg2);
++                SDL_PushEvent(&e);
++                if (!strcmp(arg3, "click")) {
++                    SDL_Event b = {0};
++                    b.button.type = SDL_EVENT_MOUSE_BUTTON_DOWN, b.button.button = SDL_BUTTON_LEFT, b.button.down = true;
++                    b.button.x = e.motion.x, b.button.y = e.motion.y, b.button.clicks = 1;
++                    SDL_PushEvent(&b);
++                    b.button.type = SDL_EVENT_MOUSE_BUTTON_UP, b.button.down = false;
++                    SDL_PushEvent(&b);
++                }
++                continue;
++            }
++            if (!strcmp(cmd, "mousemove")) {  // mousemove <x> <y> <ms>: mouse look at that speed (counts a second)
++                char arg3[16] = "";
++                sscanf(line, "%*s %*s %*s %15s", arg3);
++                test_vx = (float)atof(arg), test_vy = (float)atof(arg2);
++                test_until = plat_now_ns() + (uint64_t)atoi(arg3) * 1000000ull;
++                continue;
++            }
++            if (!strcmp(cmd, "textkey")) {
++                textinput_key(!strcmp(arg, "enter") ? TI_ENTER : !strcmp(arg, "escape") ? TI_CANCEL : TI_NONE);
++                continue;
++            }
++            if (!strcmp(cmd, "shot")) {
++                snprintf(g_shot_request, sizeof g_shot_request, "shots/%s.png", arg[0] ? arg : "control");
++            } else if (!strcmp(cmd, "frame")) {
++                LOG("[control] frame %llu\n", (unsigned long long)g_present_count);
++            } else {
++                unsigned long n = arg[0] ? strtoul(arg, NULL, 10) : 8, delay = strtoul(arg2, NULL, 10);
++                uint64_t at = g_present_count + 1 + delay;
++                if (!add_step(cmd, at, n ? n : 8)) LOG("[control] unknown command '%s'\n", cmd);
++                else LOG("[control] %s %lu at frame %llu\n", cmd, n ? n : 8, (unsigned long long)at);
++            }
++        }
++    }
++    fclose(f);
++}
++// ---- events
++// Which controller the game reads. SDL calls other devices a gamepad as well (a Steam Controller's puck, an analog
++// keyboard's mouse interface) and the first one wins, which reads as stuck buttons and sticks: so every device is
++// logged, and MHGU_PAD=<part of the name, case-insensitive> says which one to use.
++static bool pad_matches(SDL_JoystickID id) {
++    const char *sel = getenv("MHGU_PAD");
++    if (!sel || !*sel) return true;
++    unsigned vid = 0, pid = 0;  // "28de:1142" matches the ids, anything else part of the name
++    if (sscanf(sel, "%4x:%4x", &vid, &pid) == 2)
++        return SDL_GetGamepadVendorForID(id) == vid && SDL_GetGamepadProductForID(id) == pid;
++    const char *name = SDL_GetGamepadNameForID(id);
++    return name && SDL_strcasestr(name, sel);
++}
++
++static void log_pad(SDL_JoystickID id, const char *tag) {
++    const char *name = SDL_GetGamepadNameForID(id);
++    LOG("[input] %s: %s (%04x:%04x), SDL mapping %s\n", tag, name ? name : "?", SDL_GetGamepadVendorForID(id),
++        SDL_GetGamepadProductForID(id), SDL_GetGamepadMappingForID(id) ? "known" : "NONE (SDL guesses the buttons)");
++}
++
++static void open_pad(SDL_JoystickID id) {
++    if (pad) { log_pad(id, "gamepad appeared, keeping the one in use"); return; }
++    if (!pad_matches(id)) { log_pad(id, "gamepad skipped (MHGU_PAD)"); return; }
++    pad = SDL_OpenGamepad(id);
++    if (pad) log_pad(id, "gamepad in use");
++}
++
++static void pick_pad(void) {  // over every controller SDL sees now: MHGU_PAD picks, else the first
++    int n = 0;
++    SDL_JoystickID *ids = SDL_GetGamepads(&n);
++    for (int i = 0; i < n; i++) open_pad(ids[i]);
++    SDL_free(ids);
++}
++
++void host_input_event(const SDL_Event *e) {
++    if (overlay_event(e)) return;  // (Forge's menu open: keyboard and mouse are its)
++    if (textinput_event(e)) return;  // (typing into a text entry: not controller buttons)
++    switch (e->type) {
++    case SDL_EVENT_KEY_DOWN: case SDL_EVENT_KEY_UP:
++        if (e->key.scancode < SDL_SCANCODE_COUNT) keys[e->key.scancode] = e->type == SDL_EVENT_KEY_DOWN;
++        if (e->type == SDL_EVENT_KEY_DOWN && !e->key.repeat) {  // F12: screenshot, F11: 8 consecutive frames (run\shots\)
++            static int nshot;
++            uint64_t t = (uint64_t)time(NULL);
++            if ((e->key.scancode == SDL_SCANCODE_RETURN || e->key.scancode == SDL_SCANCODE_KP_ENTER) && (e->key.mod & SDL_KMOD_ALT)) {
++                keys[e->key.scancode] = false;  // (Alt+Enter: windowed <-> full screen, not a button press)
++                keys[SDL_SCANCODE_LALT] = keys[SDL_SCANCODE_RALT] = false;
++                ui_toggle_fullscreen();
++            } else if (e->key.scancode == SDL_SCANCODE_ESCAPE) {
++                if (mouse_grab) LOG("[input] mouse released\n");
++                mouse_grab = false;
++            } else if (e->key.scancode == SDL_SCANCODE_F12)
++                snprintf(g_shot_request, sizeof g_shot_request, "shots/shot_%llu_%d.png", (unsigned long long)t, nshot++);
++            else if (e->key.scancode == SDL_SCANCODE_F11) {
++                snprintf(g_burst_name, sizeof g_burst_name, "burst_%llu_%d", (unsigned long long)t, nshot++);
++                g_burst_index = 0;
++                g_burst_left = 8;
++            } else if (e->key.scancode == SDL_SCANCODE_F10) {
++                g_dump_request = 2;  // (debug) every render pass of the next 2 frames, as "dump 2"
++            } else if (e->key.scancode == SDL_SCANCODE_F7) {  // MSAA off / 2x / 4x / 8x (to compare; the settings set it)
++                void vk_cycle_msaa(void);
++                vk_cycle_msaa();
++            } else if (e->key.scancode == SDL_SCANCODE_F8) {  // (debug) shadow-pass scissors: as set / none / mirrored
++                extern volatile int g_shadow_scissor_mode;
++                g_shadow_scissor_mode = (g_shadow_scissor_mode + 1) % 3;
++                LOG("[input] F8: shadow scissor mode %d\n", g_shadow_scissor_mode);
++            } else if (e->key.scancode == SDL_SCANCODE_F9) {  // (debug) colour clears: vkCmdClearAttachments <-> draws
++                extern volatile int g_clear_draw;
++                g_clear_draw = g_clear_draw > 0 ? 0 : 1;
++                LOG("[input] F9: colour clears as %s\n", g_clear_draw ? "draws" : "vkCmdClearAttachments");
++            }
++        }
++        break;
++    case SDL_EVENT_MOUSE_MOTION:
++        if (mouse_captured) mouse_dx += e->motion.xrel, mouse_dy += e->motion.yrel;
++        break;
++    case SDL_EVENT_MOUSE_BUTTON_DOWN: case SDL_EVENT_MOUSE_BUTTON_UP: {
++        int n = e->button.button;
++        if (n < SDL_BUTTON_LEFT || n > SDL_BUTTON_X2) break;
++        if (!e->button.down) {
++            keys[IN_MOUSE(n)] = false;
++        } else if (!mouse_captured && !mouse_no_capture) {  // (the click that captures the mouse is not a button press)
++            if (!mouse_grab) LOG("[input] capturing the mouse\n");
++            mouse_grab = true;
++        } else {
++            keys[IN_MOUSE(n)] = true;
++        }
++        break;
++    }
++    case SDL_EVENT_MOUSE_WHEEL:  // (only while the mouse is captured: over another window's edge it is not the game's)
++        if (mouse_captured || mouse_no_capture) {
++            float y = e->wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -e->wheel.y : e->wheel.y;
++            if (y > 0.0f) wheel_until[0] = plat_now_ns() + WHEEL_HOLD_NS;
++            if (y < 0.0f) wheel_until[1] = plat_now_ns() + WHEEL_HOLD_NS;
++        }
++        break;
++    case SDL_EVENT_WINDOW_FOCUS_LOST:
++        memset(keys, 0, sizeof keys);
++        wheel_until[0] = wheel_until[1] = 0;
++        mouse_grab = false;
++        break;
++    case SDL_EVENT_GAMEPAD_ADDED:
++        open_pad(e->gdevice.which);
++        break;
++    case SDL_EVENT_GAMEPAD_REMOVED:
++        if (pad && SDL_GetGamepadID(pad) == e->gdevice.which) {
++            log_pad(e->gdevice.which, "gamepad removed");
++            SDL_CloseGamepad(pad);
++            pad = NULL;
++            pick_pad();
++        }
++        break;
++    }
++}
++
++static int32_t clamp_axis(int v) { return v < -32767 ? -32767 : v > 32767 ? 32767 : v; }
++
++// Capture or release the mouse as wanted, and add its movement to the right stick.
++static void mouse_update(int *rx, int *ry) {
++    bool want = mouse_grab && !overlay_menu_open();  // (Forge's menu: the pointer is its)
++    SDL_Window *w = ui_window();
++    if (want != mouse_captured && w) {
++        if (SDL_SetWindowRelativeMouseMode(w, want) || !want) {
++            mouse_captured = want;
++        } else {
++            LOG("[input] mouse capture failed: %s (no mouse look; clicks are buttons)\n", SDL_GetError());
++            mouse_grab = false, mouse_no_capture = true;
++        }
++        mouse_dx = mouse_dy = 0;
++    }
++    static uint64_t last;
++    static float vx, vy;  // the speed, smoothed: counts a second
++    uint64_t now = plat_now_ns();
++    float dt = last ? (float)(now - last) * 1e-9f : 0.0f;
++    last = now;
++    if (dt > 0.1f) dt = 0.1f;
++    if (now < test_until) mouse_dx += test_vx * dt, mouse_dy += test_vy * dt;
++    if (dt > 0.0f) {
++        float a = 1.0f - expf(-dt / MOUSE_SMOOTH_S);
++        vx += (mouse_dx / dt - vx) * a, vy += (mouse_dy / dt - vy) * a;
++    }
++    mouse_dx = mouse_dy = 0;
++    if (!mouse_captured && now >= test_until) vx = vy = 0;
++    float s = g_config.mouse_sensitivity / MOUSE_FULL_SPEED;
++    float x = vx * s, y = -vy * s;  // (the mouse's y is down, the stick's up)
++    float m = sqrtf(x * x + y * y);
++    if (m < 0.02f) return;
++    float t = (MOUSE_DEADZONE + (1.0f - MOUSE_DEADZONE) * (m > 1.0f ? 1.0f : m)) / m;
++    *rx += (int)(x * t * 32767.0f), *ry += (int)(y * t * 32767.0f);
++}
++
++void host_input_update(void) {
++    if (nscript < 0) script_parse();
++    control_poll();
++    quickhunt_poll();  // (debug, MHGU_QUICKHUNT: runtime/hle/quickhunt.c)
++    textinput_update();
++    uint64_t b = 0;
++    int lx = 0, ly = 0, rx = 0, ry = 0;
++    static bool typing;
++    if (textinput_active() != typing) {
++        typing = !typing;
++        memset(keys, 0, sizeof keys);  // (keys held when the entry opened are typing now, or released)
++    }
++
++    uint64_t now = plat_now_ns();
++    for (int i = 0; i <= BTN_DOWN; i++)
++        if (action_down(i, now)) b |= B(i);
++    int kx = action_down(ACT_MOVE_RIGHT, now) - action_down(ACT_MOVE_LEFT, now);
++    int ky = action_down(ACT_MOVE_UP, now) - action_down(ACT_MOVE_DOWN, now);
++    int k = action_down(ACT_WALK, now) ? 16000 : 32767;
++    if (kx && ky) k = k * 7071 / 10000;  // diagonals: same length as straight
++    lx += kx * k, ly += ky * k;
++    static bool item_was[2];
++    for (int i = 0; i < 2; i++) {  // item bar: a new press starts L, then Y / A (see ITEM_L_NS)
++        bool d = action_down(ACT_ITEM_PREV + i, now);
++        if (d && !item_was[i] && now >= item_start + ITEM_L_NS + ITEM_PRESS_NS) item_start = now, item_btn = i ? BTN_A : BTN_Y;
++        item_was[i] = d;
++    }
++    if (item_btn >= 0) {
++        if (now < item_start + ITEM_L_NS + ITEM_PRESS_NS) {
++            b |= B(BTN_L);
++            if (now >= item_start + ITEM_L_NS) b |= B(item_btn);
++        } else {
++            item_btn = -1;
++        }
++    }
++    mouse_update(&rx, &ry);
++
++    if (pad) {
++        static const struct { SDL_GamepadButton sdl; int btn; } pad_buttons[] = {
++            {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, BTN_L}, {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, BTN_R},
++            {SDL_GAMEPAD_BUTTON_START, BTN_PLUS}, {SDL_GAMEPAD_BUTTON_BACK, BTN_MINUS},
++            {SDL_GAMEPAD_BUTTON_DPAD_UP, BTN_UP}, {SDL_GAMEPAD_BUTTON_DPAD_DOWN, BTN_DOWN},
++            {SDL_GAMEPAD_BUTTON_DPAD_LEFT, BTN_LEFT}, {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, BTN_RIGHT},
++            {SDL_GAMEPAD_BUTTON_LEFT_STICK, BTN_LSTICK}, {SDL_GAMEPAD_BUTTON_RIGHT_STICK, BTN_RSTICK},
++        };
++        for (unsigned i = 0; i < sizeof pad_buttons / sizeof *pad_buttons; i++)
++            if (SDL_GetGamepadButton(pad, pad_buttons[i].sdl)) b |= B(pad_buttons[i].btn);
++        // face buttons: SDL names them by position (south, east, west, north). Settings FaceButtons: Position = the
++        // Switch layout; Label = the letter on the button (PlayStation symbols as an Xbox pad's letters at that place)
++        static const SDL_GamepadButton face[4] = {SDL_GAMEPAD_BUTTON_SOUTH, SDL_GAMEPAD_BUTTON_EAST, SDL_GAMEPAD_BUTTON_WEST,
++                                                  SDL_GAMEPAD_BUTTON_NORTH};
++        static const int switch_at[4] = {BTN_B, BTN_A, BTN_Y, BTN_X}, xbox_at[4] = {BTN_A, BTN_B, BTN_X, BTN_Y};
++        for (int i = 0; i < 4; i++) {
++            if (!SDL_GetGamepadButton(pad, face[i])) continue;
++            int btn = switch_at[i];
++            if (g_config.face_buttons == FACE_LABEL) {
++                switch (SDL_GetGamepadButtonLabel(pad, face[i])) {
++                case SDL_GAMEPAD_BUTTON_LABEL_A: btn = BTN_A; break;
++                case SDL_GAMEPAD_BUTTON_LABEL_B: btn = BTN_B; break;
++                case SDL_GAMEPAD_BUTTON_LABEL_X: btn = BTN_X; break;
++                case SDL_GAMEPAD_BUTTON_LABEL_Y: btn = BTN_Y; break;
++                default: btn = xbox_at[i]; break;
++                }
++            }
++            b |= B(btn);
++        }
++        if (SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) > 8000) b |= B(BTN_ZL);
++        if (SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) > 8000) b |= B(BTN_ZR);
++        // sticks: SDL's y is down; a small dead zone against drift
++        int ax[4] = {SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFTX), -SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_LEFTY),
++                     SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHTX), -SDL_GetGamepadAxis(pad, SDL_GAMEPAD_AXIS_RIGHTY)};
++        for (int i = 0; i < 4; i++)
++            if (ax[i] > -3000 && ax[i] < 3000) ax[i] = 0;
++        lx += ax[0], ly += ax[1], rx += ax[2], ry += ax[3];
++        static const char *dbg;  // (MHGU_PAD_DEBUG=1) every raw SDL controller change: finds a button that presses itself
++        if (!dbg) dbg = getenv("MHGU_PAD_DEBUG") ? "1" : "";
++        if (*dbg) {
++            static uint64_t pbtn;
++            static int pax[6];
++            uint64_t cb = 0;
++            for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++)
++                if (SDL_GetGamepadButton(pad, (SDL_GamepadButton)i)) cb |= 1ull << i;
++            int dax[6];
++            for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; i++) dax[i] = SDL_GetGamepadAxis(pad, (SDL_GamepadAxis)i);
++            for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++)
++                if ((cb ^ pbtn) & (1ull << i))
++                    LOG("[paddebug] %s %s\n", SDL_GetGamepadStringForButton((SDL_GamepadButton)i),
++                        (cb >> i) & 1 ? "down" : "up");
++            pbtn = cb;
++            for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; i++)
++                if (dax[i] != pax[i] && (dax[i] > 500 || dax[i] < -500 || pax[i] > 500 || pax[i] < -500))
++                    LOG("[paddebug] axis %s %d\n", SDL_GetGamepadStringForAxis((SDL_GamepadAxis)i), dax[i]);
++            for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; i++) pax[i] = dax[i];
++        }
++    } else {
++        static bool scanned;  // (controllers present at startup send no ADDED event to a loop that started after them)
++        if (!scanned) scanned = true, pick_pad();
++    }
++
++    uint64_t frame = g_present_count;
++    for (int i = 0; i < nscript; i++) {
++        const ScriptStep *st = &script[i];
++        if (frame < st->start || frame >= st->start + st->len) continue;
++        b |= st->buttons;
++        if (st->stick == 0) lx = st->x, ly = st->y;
++        if (st->stick == 1) rx = st->x, ry = st->y;
++    }
++
++    static bool menu;
++    if (overlay_menu_open() != menu) {
++        menu = !menu;
++        memset(keys, 0, sizeof keys);  // (keys held as it opened went to the menu: nothing stays pressed)
++    }
++    if (menu) {  // Forge's menu has the controller (as in Forge: A activates, B cancels, stick and d-pad move)
++        OverlayPad p = {b & B(BTN_A), b & B(BTN_B), b & B(BTN_X), b & B(BTN_Y), b & B(BTN_UP), b & B(BTN_DOWN),
++                        b & B(BTN_LEFT), b & B(BTN_RIGHT), b & B(BTN_L), b & B(BTN_R), b & B(BTN_PLUS),
++                        b & B(BTN_MINUS), clamp_axis(lx) / 32767.0f, clamp_axis(ly) / 32767.0f};
++        overlay_pad(&p);
++        b = 0, lx = ly = rx = ry = 0;
++    }
++
++    static uint64_t was;
++    uint64_t down = b & ~was;
++    was = b;
++    if (typing) {  // Plus (Start) confirms, B cancels the entry; the game keeps the rest of the controller. Dropping it
++                   // whole read as a lock-up: with no keyboard on screen (the game's own inline keyboard needs
++                   // nativeNX/arc/swkbd_eu.arc, which is missing), a pad-only player had no way out - B only reopened
++                   // the entry.
++        if (down & B(BTN_PLUS)) textinput_key(TI_ENTER);
++        else if (down & B(BTN_B)) textinput_key(TI_CANCEL);
++        b &= ~(B(BTN_PLUS) | B(BTN_B));
++    }
++    input_set(b, clamp_axis(lx), clamp_axis(ly), clamp_axis(rx), clamp_axis(ry));
++}
+diff --git a/runtime/net/emsync.c b/runtime/net/emsync.c
 index 4927570..75b2873 100644
 --- a/runtime/net/emsync.c
 +++ b/runtime/net/emsync.c

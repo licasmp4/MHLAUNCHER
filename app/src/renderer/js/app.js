@@ -4,10 +4,19 @@
   const logo = await api.logo(); if (logo) $("#logo").style.backgroundImage = "url('" + logo + "')"; else $("#logo").style.background = "url('img/icone.png') center/cover";
 
   if (!est.pasta) {
-    // sem a pasta do jogo: pede para escolher (Windows: onde fica o mhgurecomp.exe; Linux: o mhgurecomp)
+    // sem a pasta do jogo: quem baixou só o launcher ainda não tem o jogo instalado; quem já tem escolhe a pasta
+    // (Windows: onde fica o mhgurecomp.exe; Linux: o mhgurecomp)
     const c = $("#pg-inicio .conteudo"); $("#pg-inicio").classList.add("ativa");
-    c.append(el("div", { class: "aviso", style: { marginTop: "40px" } }, el("div", { class: "t" }, el("b", {}, "Onde está o jogo?"), el("span", {}, "Escolha a pasta do MHGURecomp (a que tem o " + (est.plataforma === "win32" ? "mhgurecomp.exe" : "mhgurecomp") + ").")),
-      botao("Escolher pasta", async () => { if (await api.pastaEscolher()) location.reload(); else toast("Essa pasta não tem o port"); }, "primario", "pasta")));
+    const exe = est.plataforma === "win32" ? "mhgurecomp.exe" : "mhgurecomp";
+    const passo = (n, t) => el("div", { class: "linha", style: { gridTemplateColumns: "28px 1fr" } }, el("span", { class: "selo brasa", style: { justifyContent: "center" } }, n), el("span", {}, t));
+    c.append(el("div", { class: "cartao", style: { marginTop: "40px" } }, secao("Ainda não instalou o jogo?"),
+      el("div", { class: "dica", style: { fontSize: "15px", marginBottom: "6px" } }, "Este launcher só abre e ajusta o jogo; ele não instala nada. Primeiro instale com o instalador:"),
+      passo("1", "Baixe o Novo-MHGU.zip na página de downloads e extraia."),
+      passo("2", "Abra o Instalar MHGU.exe. Ele pede o seu jogo (XCI), a atualização 1.4.0 (NSP) e o prod.keys, tirados do seu Switch."),
+      passo("3", "No fim ele instala o port, a tradução e este launcher, e cria o atalho na Área de Trabalho."),
+      el("div", { style: { marginTop: "14px" } }, botao("Baixar o instalador", () => api.externo("https://github.com/licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER/releases/latest"), "primario", "baixar"))),
+      el("div", { class: "aviso", style: { marginTop: "16px" } }, el("div", { class: "t" }, el("b", {}, "Já instalou?"), el("span", {}, "Escolha a pasta do jogo (a que tem o " + exe + ").")),
+        botao("Escolher pasta", async () => { if (await api.pastaEscolher()) location.reload(); else toast("Essa pasta não tem o " + exe); }, "", "pasta")));
     return;
   }
 
