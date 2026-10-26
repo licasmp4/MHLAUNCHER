@@ -1,0 +1,42 @@
+# Monta o MHGU Launcher 3 (Electron) para Windows e Linux quando um Release é publicado (tag v*),
+# e anexa os arquivos nele. Também dá para rodar na mão em Actions (sem anexar: vira artifact).
+name: Montar
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  montar:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-fund --no-audit
+      - if: runner.os == 'Windows'
+        run: npm run windows
+      - if: runner.os == 'Linux'
+        run: npm run linux
+      - if: github.event_name == 'release'
+        shell: bash
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          shopt -s nullglob
+          f=(dist/*-windows.exe dist/*-linux.AppImage dist/*-linux.deb)
+          gh release upload "${{ github.event.release.tag_name }}" "${f[@]}" --clobber
+      - if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHGU-Launcher-${{ runner.os }}
+          path: |
+            app/dist/*-windows.exe
+            app/dist/*-linux.AppImage
+            app/dist/*-linux.deb

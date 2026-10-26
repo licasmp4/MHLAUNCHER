@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'">
+  <title>MHGU Launcher</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="fundo"><img id="fundoA" alt=""><img id="fundoB" alt=""></div>
+  <div id="grao"></div>
+  <div id="app">
+    <aside id="lado">
+      <div class="marca-jogo"><span class="logo" id="logo"></span><div><b>Monster Hunter</b><small>Generations Ultimate</small></div></div>
+      <div class="busca">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input class="campo" id="busca" placeholder="Buscar ajuste" spellcheck="false" autocomplete="off">
+        <div id="resultados" hidden></div>
+      </div>
+      <nav id="nav">
+        <div class="marca-nav" id="marcaNav"></div>
+        <h6>Jogar</h6>
+        <button data-p="inicio"><svg viewBox="0 0 24 24"><path d="M12 2.5l7.5 3V11c0 5-3.2 8.6-7.5 10.5C7.7 19.6 4.5 16 4.5 11V5.5z M12 7v9 M8.5 10.5h7"/></svg><span>Início</span></button>
+        <button data-p="online"><svg viewBox="0 0 24 24"><path d="M5 21V3 M5 4h13l-3 4.5 3 4.5H5"/></svg><span>Online</span></button>
+        <button data-p="cacada"><svg viewBox="0 0 24 24"><path d="M18.5 3l2 2L9 16.5l-2-2z M5.5 13l5 5 M7.5 16L4 19.5 M3.2 18.7l1.6 1.6"/></svg><span>Caçada</span></button>
+        <h6>Ajustes</h6>
+        <button data-p="graficos"><svg viewBox="0 0 24 24"><path d="M2.5 12c3-5.5 16-5.5 19 0-3 5.5-16 5.5-19 0z"/><circle cx="12" cy="12" r="3"/></svg><span>Gráficos</span></button>
+        <button data-p="fps"><svg viewBox="0 0 24 24"><path d="M6.5 3h11 M6.5 21h11 M8 3c0 6 8 6 8 9s-8 3-8 9 M16 3c0 6-8 6-8 9s8 3 8 9"/></svg><span>FPS e Hz</span></button>
+        <button data-p="controles"><svg viewBox="0 0 24 24"><path d="M7 8h10c3 0 4.5 3 4.5 6 0 3-2 4-3.5 2.5L16 14.5H8L6 16.5C4.5 18 2.5 17 2.5 14 2.5 11 4 8 7 8z M7.5 10.5v3 M6 12h3 M15.5 11h.1 M17.5 13h.1"/></svg><span>Controles</span></button>
+        <h6>Mais</h6>
+        <button data-p="mods"><svg viewBox="0 0 24 24"><path d="M8.5 7.5c0-3.5 7-3.5 7 0 M4.5 8h15L18 20.5H6z M9.5 12h5"/></svg><span>Mods e Cheats</span></button>
+        <button data-p="sobre"><svg viewBox="0 0 24 24"><path d="M7 4h11.5c1.5 0 1.5 3.5 0 3.5H17V20H5.5C4 20 4 16.5 5.5 16.5H7z M7 16.5V4 M10 9.5h4 M10 12.5h4"/></svg><span>Sobre</span></button>
+      </nav>
+      <div class="pe">
+        <button class="btn primario" id="jogar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 3l2 2L9 16.5l-2-2z M5.5 13l5 5 M7.5 16L4 19.5"/></svg><span>Partir em missão</span></button>
+        <div class="credito">feito por <b>licas.mp3</b></div>
+      </div>
+    </aside>
+    <main id="principal">
+      <div id="barra">
+        <div class="mini" id="mini">
+          <span class="capa" id="miniCapa"></span>
+          <div class="t"><b id="miniNome">Cenas do jogo</b><small>Monster Hunter Generations Ultimate</small></div>
+          <button class="ic-btn" id="miniAnt" title="Cena anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 5v14 M18 6l-9 6 9 6z"/></svg></button>
+          <button class="ic-btn" id="miniPlay" title="Pausar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path id="miniIcone" d="M8 5v14 M16 5v14"/></svg></button>
+          <button class="ic-btn" id="miniProx" title="Próxima cena"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 5v14 M6 6l9 6-9 6z"/></svg></button>
+          <div class="prog"><i id="miniProg"></i></div>
+        </div>
+        <div class="janela">
+          <button data-j="min" title="Minimizar"><svg viewBox="0 0 12 12"><path d="M1 6h10"/></svg></button>
+          <button data-j="max" title="Maximizar"><svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9"/></svg></button>
+          <button data-j="fechar" class="x" title="Fechar"><svg viewBox="0 0 12 12"><path d="M1.5 1.5l9 9 M10.5 1.5l-9 9"/></svg></button>
+        </div>
+      </div>
+      <div class="paginas" id="paginas">
+        <section class="pagina" id="pg-inicio"><div class="conteudo"></div></section>
+        <section class="pagina" id="pg-online"><div class="conteudo"></div></section>
+        <section class="pagina" id="pg-cacada"><div class="conteudo"></div></section>
+        <section class="pagina" id="pg-graficos"><div class="conteudo"></div></section>
+        <section class="pagina" id="pg-fps"><div class="conteudo"></div></section>
+        <section class="pagina" id="pg-controles"><div class="conteudo"></div></section>
+        <section class="pagina" id="pg-mods"><div class="conteudo"></div></section>
+        <section class="pagina" id="pg-sobre"><div class="conteudo"></div></section>
+      </div>
+    </main>
+  </div>
+  <div id="toast"></div>
+  <script src="js/comum.js"></script>
+  <script src="js/cenas.js"></script>
+  <script src="js/pg-inicio.js"></script>
+  <script src="js/pg-online.js"></script>
+  <script src="js/pg-cacada.js"></script>
+  <script src="js/pg-graficos.js"></script>
+  <script src="js/pg-controles.js"></script>
+  <script src="js/pg-mods.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

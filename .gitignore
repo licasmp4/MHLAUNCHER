@@ -24,3 +24,7 @@ launcher.ini
 launcher_amigos.txt
 launcher_novidades.txt
 versao_port.txt
+
+# app Electron (dependências e pacotes montados)
+node_modules/
+app/dist/

@@ -1,0 +1,167 @@
+/* ===== MHGU Launcher · sistema de design "guilda à noite"
+   couro (superfícies), pergaminho (texto), brasa (ação). Grade de 4/8 px. Curva "mola" do Clawdeck. */
+@font-face { font-family: "Cinzel"; font-weight: 600; src: url("../fonts/Cinzel-SemiBold.ttf"); }
+@font-face { font-family: "Cinzel"; font-weight: 700; src: url("../fonts/Cinzel-Bold.ttf"); }
+@font-face { font-family: "Cinzel"; font-weight: 900; src: url("../fonts/Cinzel-Black.ttf"); }
+@font-face { font-family: "Alegreya Sans"; font-weight: 400; src: url("../fonts/AlegreyaSans-Regular.ttf"); }
+@font-face { font-family: "Alegreya Sans"; font-weight: 500; src: url("../fonts/AlegreyaSans-Medium.ttf"); }
+@font-face { font-family: "Alegreya Sans"; font-weight: 700; src: url("../fonts/AlegreyaSans-Bold.ttf"); }
+@font-face { font-family: "Alegreya Sans"; font-weight: 800; src: url("../fonts/AlegreyaSans-ExtraBold.ttf"); }
+
+:root {
+  /* superfícies: do fundo ao relevo */
+  --bg: #120f0d; --s1: #1b1714; --s2: #231e1a; --s3: #2d2621; --s4: #3a312a;
+  --linha: rgba(233, 221, 197, .08); --linha2: rgba(233, 221, 197, .14); --linha3: rgba(233, 221, 197, .24);
+  --bronze: #8a6e52;
+  /* texto */
+  --tx: #f2e9d8; --tx2: #bdae96; --tx3: #8c7d68;
+  /* ação e sinais */
+  --brasa: #e2603f; --brasa2: #ef7a59; --brasa3: #c24b2d; --brasa-suave: rgba(226, 96, 63, .14); --brasa-linha: rgba(226, 96, 63, .42);
+  --verde: #64c3a4; --vermelho: #e5574b; --ouro: #e9ba6f;
+  /* forma e movimento */
+  --r1: 7px; --r2: 11px; --r3: 16px; --pill: 999px;
+  --mola: cubic-bezier(.23, 1, .32, 1); --suave: cubic-bezier(.25, .1, .25, 1); --sai: cubic-bezier(.4, 0, .6, 1);
+  --display: "Cinzel", Georgia, serif; --sans: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --relevo: inset 0 1px 0 rgba(255, 244, 225, .06), 0 1px 2px rgba(0, 0, 0, .35);
+  --sombra: 0 18px 48px rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--tx); font: 400 15px/1.45 var(--sans); -webkit-font-smoothing: antialiased; overflow: hidden; user-select: none; }
+button, input, select { font: inherit; color: inherit; }
+img { display: block; max-width: 100%; }
+::selection { background: var(--brasa-suave); }
+:focus-visible { outline: 2px solid var(--brasa); outline-offset: 2px; border-radius: var(--r1); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* rolagem discreta: fina, sem trilho, só o polegar de pergaminho */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: transparent; border: 3px solid transparent; background-clip: content-box; border-radius: 10px; }
+.rolando::-webkit-scrollbar-thumb, :hover::-webkit-scrollbar-thumb { background-color: rgba(201, 174, 142, .35); }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(233, 221, 197, .6) !important; }
+
+/* ===== tipografia */
+.h1 { font: 900 34px/1.05 var(--display); letter-spacing: .01em; margin: 0; text-shadow: 0 2px 18px rgba(0, 0, 0, .55); }
+.sub { color: var(--tx2); font-size: 16px; margin: 6px 0 0; }
+.secao { display: flex; align-items: center; gap: 10px; font: 700 13px var(--display); letter-spacing: .05em; color: #c9ae8e; margin: 0 0 12px; }
+.secao::before { content: ""; width: 7px; height: 7px; background: var(--brasa); transform: rotate(45deg); flex: none; }
+.secao .acao { margin-left: auto; font: 400 13.5px var(--sans); letter-spacing: 0; color: var(--tx3); }
+.secao .acao .btn { font-family: var(--sans); }
+.dica { color: var(--tx3); font-size: 13.5px; }
+.rotulo { font-weight: 500; font-size: 15.5px; }
+.valor { font: 700 15.5px var(--sans); color: var(--brasa2); font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+.divisoria { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; }
+.divisoria i { width: 8px; height: 8px; background: var(--brasa); transform: rotate(45deg); }
+.divisoria b { width: 46px; height: 2px; background: var(--brasa); }
+.divisoria s { width: 180px; height: 1px; background: linear-gradient(90deg, var(--bronze), transparent); }
+
+/* ===== botões: relevo, sobem 1 px no hover, afundam no clique */
+.btn {
+  height: 38px; padding: 0 16px; border-radius: var(--r1); border: 1px solid var(--linha2); cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 14.5px; letter-spacing: .01em;
+  background: linear-gradient(180deg, var(--s4), var(--s3)); color: var(--tx); box-shadow: var(--relevo);
+  transition: transform .25s var(--mola), background .15s, border-color .15s, box-shadow .25s var(--mola), opacity .15s;
+}
+.btn:hover { transform: translateY(-1px); border-color: var(--linha3); background: linear-gradient(180deg, #443a31, var(--s4)); box-shadow: var(--relevo), 0 6px 16px rgba(0, 0, 0, .3); }
+.btn:active { transform: translateY(0) scale(.97); transition-duration: .08s; }
+.btn:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn.peq { height: 32px; padding: 0 12px; font-size: 13.5px; }
+.btn.fantasma { background: transparent; border-color: transparent; box-shadow: none; color: var(--tx2); }
+.btn.fantasma:hover { background: var(--s2); color: var(--tx); border-color: var(--linha); }
+.btn.primario {
+  position: relative; overflow: hidden; color: #fff6ea; border-color: #a63e23;
+  background: linear-gradient(180deg, #ee7351, #c94f2f); box-shadow: inset 0 1px 0 rgba(255, 230, 210, .35), 0 6px 20px rgba(226, 96, 63, .28);
+}
+.btn.primario:hover { background: linear-gradient(180deg, #f5825f, #d25735); box-shadow: inset 0 1px 0 rgba(255, 230, 210, .4), 0 10px 28px rgba(226, 96, 63, .4); }
+.btn.primario::after { content: ""; position: absolute; top: -20%; bottom: -20%; width: 60px; left: -90px; transform: skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 244, 228, .45), transparent); pointer-events: none; }
+.btn.primario:hover::after, .btn.primario.brilha::after { animation: reflexo .9s var(--suave); }
+@keyframes reflexo { to { left: calc(100% + 30px); } }
+.ic-btn { width: 34px; height: 34px; border-radius: 50%; border: 0; background: transparent; color: var(--tx2); display: grid; place-items: center; cursor: pointer; transition: background .15s, color .15s, transform .25s var(--mola); }
+.ic-btn:hover { background: rgba(233, 221, 197, .08); color: var(--tx); }
+.ic-btn:active { transform: scale(.88); }
+.ic-btn svg { width: 16px; height: 16px; }
+
+/* ===== interruptor */
+.chave { position: relative; width: 44px; height: 26px; flex: none; cursor: pointer; }
+.chave input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chave span { position: absolute; inset: 0; border-radius: var(--pill); background: var(--s4); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4); transition: background .25s var(--suave); }
+.chave span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #cdbfa8; box-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: transform .3s var(--mola), background .2s; }
+.chave input:checked + span { background: var(--brasa); }
+.chave input:checked + span::after { transform: translateX(18px); background: #fff4e6; }
+.chave input:focus-visible + span { outline: 2px solid var(--brasa); outline-offset: 2px; }
+.chave input:disabled + span { opacity: .4; }
+
+/* ===== controle segmentado: o destaque desliza até a opção escolhida */
+.seg { position: relative; display: inline-flex; padding: 3px; gap: 2px; border-radius: 9px; background: var(--s1); border: 1px solid var(--linha2); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .35); }
+.seg button { position: relative; z-index: 1; height: 30px; min-width: 52px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--tx2); font-weight: 700; font-size: 13.5px; cursor: pointer; transition: color .2s; }
+.seg button:hover { color: var(--tx); }
+.seg button.on { color: #fff6ea; }
+.seg .marca { position: absolute; top: 3px; bottom: 3px; left: 0; border-radius: 6px; background: linear-gradient(180deg, #e8694a, #c64f30); box-shadow: inset 0 1px 0 rgba(255, 230, 210, .3), 0 2px 8px rgba(226, 96, 63, .3); transition: transform .38s var(--mola), width .38s var(--mola); }
+
+/* ===== controle deslizante */
+.faixa { display: flex; align-items: center; gap: 14px; width: 100%; }
+input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; height: 26px; background: transparent; cursor: pointer; --p: 50%; }
+input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 6px; background: linear-gradient(90deg, var(--brasa) var(--p), var(--s4) var(--p)); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: #f3e9d6; border: 3px solid var(--brasa); box-shadow: 0 2px 6px rgba(0, 0, 0, .5); transition: transform .2s var(--mola); }
+input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.12); }
+input[type=range]:active::-webkit-slider-thumb { transform: scale(.95); }
+
+/* ===== campos */
+.campo { height: 40px; padding: 0 14px; border-radius: var(--r1); border: 1px solid var(--linha2); background: rgba(0, 0, 0, .25); color: var(--tx); outline: 0; transition: border-color .15s, box-shadow .2s; user-select: text; width: 100%; }
+.campo::placeholder { color: var(--tx3); }
+.campo:focus { border-color: var(--brasa-linha); box-shadow: 0 0 0 3px var(--brasa-suave); }
+select.campo { appearance: none; padding-right: 36px; cursor: pointer; width: auto; min-width: 220px;
+  background: rgba(0, 0, 0, .25) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23bdae96' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center; }
+select.campo option { background: var(--s2); color: var(--tx); }
+
+/* ===== cartões: couro com cantoneiras de bronze, como as molduras dos menus do jogo */
+.cartao { position: relative; background: linear-gradient(180deg, rgba(37, 31, 26, .94), rgba(27, 23, 20, .94)); border: 1px solid var(--linha); border-radius: var(--r2); padding: 18px 22px; box-shadow: var(--relevo); }
+.cartao::before { content: ""; position: absolute; inset: 5px; pointer-events: none; --c: rgba(138, 110, 82, .75);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 12px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) top left / 1.5px 12px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 12px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) top right / 1.5px 12px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 12px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) bottom left / 1.5px 12px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 12px 1.5px no-repeat, linear-gradient(var(--c), var(--c)) bottom right / 1.5px 12px no-repeat; }
+.cartao + .cartao, .cartao + .secao, .grade + .secao, .previa + .secao, .grade + .cartao { margin-top: 20px; }
+.linha { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 20px; padding: 13px 0; }
+.linha.com-icone { grid-template-columns: 38px 1fr auto; gap: 16px; }
+/* ícone do ajuste num quadradinho de bronze (como nos Ajustes do Mac, no couro da guilda) */
+.chip-ic { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; color: #f3c9a0;
+  background: linear-gradient(180deg, rgba(122, 92, 66, .55), rgba(70, 52, 38, .55)); box-shadow: inset 0 1px 0 rgba(255, 228, 200, .18), inset 0 0 0 1px rgba(138, 110, 82, .45); }
+.chip-ic svg { width: 19px; height: 19px; }
+.medidor { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 8px; margin-top: 6px; font-size: 12.5px; color: var(--tx3); }
+.medidor .trilho { display: flex; gap: 3px; }
+.medidor .trilho i { flex: 1; height: 5px; border-radius: 3px; background: var(--s4); }
+.medidor .trilho i.on { background: var(--brasa2); }
+.medidor .trilho.leve i.on { background: var(--verde); }
+.linha + .linha { border-top: 1px solid var(--linha); }
+.linha .txt { min-width: 0; }
+.linha .dica { margin-top: 1px; }
+
+/* opção grande (perfis, hospedar/entrar, botões do jogo) */
+.opcao { position: relative; text-align: left; padding: 16px 18px; border-radius: var(--r2); border: 1.5px solid var(--linha2); cursor: pointer; color: var(--tx);
+  background: linear-gradient(180deg, rgba(45, 38, 33, .9), rgba(30, 25, 22, .9)); box-shadow: var(--relevo);
+  transition: transform .3s var(--mola), border-color .2s, background .2s, box-shadow .3s var(--mola); }
+.opcao:hover { transform: translateY(-2px); border-color: var(--linha3); box-shadow: var(--relevo), 0 10px 24px rgba(0, 0, 0, .35); }
+.opcao:active { transform: scale(.985); }
+.opcao.on { border-color: var(--brasa); background: linear-gradient(180deg, rgba(226, 96, 63, .16), rgba(30, 25, 22, .92)); box-shadow: inset 0 0 0 1px rgba(226, 96, 63, .25), 0 10px 28px rgba(226, 96, 63, .14); }
+.opcao:disabled { opacity: .45; cursor: default; transform: none; }
+.opcao .nome { font: 700 18px var(--display); }
+.opcao .info { color: var(--tx2); font-size: 13.5px; margin-top: 2px; }
+.selo { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: var(--pill); font-size: 12px; font-weight: 700; background: rgba(233, 221, 197, .12); color: var(--tx); }
+.selo.brasa { background: var(--brasa-suave); color: var(--brasa2); }
+.selo.verde { background: rgba(100, 195, 164, .14); color: var(--verde); }
+
+.grade { display: grid; gap: 12px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* ===== entrada: os blocos nascem um depois do outro */
+@keyframes nasce { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+.pagina.ativa > .conteudo > * { animation: nasce .5s var(--mola) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes pop { from { opacity: 0; transform: scale(.94); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

@@ -7,6 +7,7 @@
 [![Versão](https://img.shields.io/github/v/release/licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER?style=for-the-badge&color=E8A33D&label=vers%C3%A3o)](../../releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER/total?style=for-the-badge&color=4CC38A&label=downloads)](../../releases)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?style=for-the-badge&logo=windows&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-Ubuntu%20%7C%20Arch-E95420?style=for-the-badge&logo=linux&logoColor=white)
 ![Idioma](https://img.shields.io/badge/idioma-pt--BR-009C3B?style=for-the-badge)
 ![Port](https://img.shields.io/badge/MHGURecomp-0.9.11-8C93A3?style=for-the-badge)
 
@@ -34,6 +35,15 @@ Um instalador que te guia passo a passo e um launcher que configura tudo sem voc
 | 🎚️ **Perfis prontos** | Leve, Equilibrado ou Ultra com um clique, com o recomendado para a sua placa de vídeo. |
 | 🔄 **Sempre atualizado** | O launcher avisa e se atualiza com um clique, e mantém o port na mesma versão para todo o grupo. |
 | 🧭 **Sem complicação** | O instalador explica cada arquivo e confere se está certo antes de continuar. |
+
+## 🆕 Launcher 3: Windows e Linux
+
+O launcher foi refeito em **Electron** (pasta [`app/`](app)) para rodar igual no **Windows** e no **Linux** (Ubuntu, Arch...):
+
+- **Windows:** `MHGU-Launcher-3.x.x-windows.exe` (portátil: coloque na pasta do `mhgurecomp.exe`)
+- **Linux:** `MHGU-Launcher-3.x.x-linux.AppImage` ou `.deb` (aponte a pasta do port na primeira vez)
+
+O port oficial roda no Windows e no Linux. O macOS ainda não é suportado pelo port, então o launcher de Mac fica para quando ele for.
 
 ## 📦 Como instalar
 
@@ -183,6 +193,20 @@ O jogo base precisa ser o **`.xci`** (o `.nsp` do jogo base não é aceito) e o 
 - [x] Online de verdade: amigos online, Hub aberto, ping e aviso de versão
 
 ## 🛠️ Para desenvolvedores
+
+### Launcher 3 (Electron, Windows e Linux)
+
+```bash
+cd app
+npm install
+npm start            # abre o launcher
+npm run windows      # dist/MHGU-Launcher-x.y.z-windows.exe
+npm run linux        # dist/MHGU-Launcher-x.y.z-linux.AppImage e .deb
+```
+
+Publicar um Release (tag `v3.x.x`) monta o Windows e o Linux sozinho no GitHub Actions e anexa os arquivos nele.
+
+### Launcher 2 (WPF, só Windows)
 
 Não precisa instalar nada: o compilador C# já vem no Windows.
 
