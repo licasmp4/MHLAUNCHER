@@ -11,6 +11,12 @@ const TECLADO = {
       ["DpadUp", "Direcional ↑", "Up"], ["DpadDown", "Direcional ↓", "Down"], ["DpadLeft", "Direcional ←", "Left"], ["DpadRight", "Direcional →", "Right"],
       ["LStick", "Clique do analógico esquerdo", "Left Ctrl, Right Ctrl"], ["RStick", "Clique do analógico direito", "Left Alt, Right Alt"]]],
   ],
+  // "Estilo MH World": a disposição do Monster Hunter World no PC trazida para os botões do MHGU (Shift corre =
+  // R, que é correr com a arma guardada; E usa item = Y; F interage = A). O que não falta fica como no padrão.
+  world: { MoveForward: "W", MoveBack: "S", MoveLeft: "A", MoveRight: "D", Walk: "Left Ctrl", X: "Mouse Left", A: "Mouse Right, F",
+    B: "Space", Y: "E, R", R: "Left Shift", L: "Q, Mouse Middle", ZL: "Mouse 4, Tab", ZR: "Mouse 5, T", ItemPrev: "Wheel Up",
+    ItemNext: "Wheel Down", Plus: "Return, Keypad Enter", Minus: "M, Backspace", DpadUp: "Up", DpadDown: "Down", DpadLeft: "Left",
+    DpadRight: "Right", LStick: "C", RStick: "V" },
   // KeyboardEvent.code -> nome do SDL (o que o port entende). Fora daqui: não dá para usar.
   sdl(code) {
     let m;
@@ -113,6 +119,9 @@ async function montarTeclado() {
   pintar();
   $$(".pagina").forEach(p => new MutationObserver(() => !$("#pg-controles").classList.contains("ativa") && parar()).observe(p, { attributes: true, attributeFilter: ["class"] }));
 
-  const restaurar = botao("Restaurar padrão", () => { parar(); for (const [k, , pad] of acoes) { atual[k] = TECLADO.lista(pad); salvar(k); } pintar(); toast("Teclas do padrão de volta"); }, "peq fantasma");
+  const aplicar = (fonte, msg) => { parar(); for (const [k, , pad] of acoes) { atual[k] = TECLADO.lista(fonte ? fonte[k] || pad : pad); salvar(k); } pintar(); toast(msg); };
+  const restaurar = el("span", { style: { display: "inline-flex", gap: "6px" } },
+    botao("Estilo MH World", () => aplicar(TECLADO.world, "Teclas no estilo do MH World. Vale ao abrir o jogo."), "peq"),
+    botao("Padrão do port", () => aplicar(null, "Teclas do padrão de volta"), "peq fantasma"));
   return { caixa, restaurar };
 }
