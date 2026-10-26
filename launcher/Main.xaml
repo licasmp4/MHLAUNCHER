@@ -717,6 +717,26 @@
             <StackPanel Margin="0,0,8,0">
               <TextBlock Text="Online" Style="{StaticResource H1}"/>
               <TextBlock Text="Jogue com amigos pela rede local, por VPN (Radmin, ZeroTier, Hamachi) ou pela internet." Style="{StaticResource H1Sub}"/>
+              <!-- amigos: presença entre launchers (porta do jogo + 1) -->
+              <Border Style="{StaticResource Card}" Padding="18,12,18,14">
+                <StackPanel>
+                  <Grid>
+                    <TextBlock Text="Amigos" Style="{StaticResource CardTitle}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,0,0">
+                      <Ellipse x:Name="meuPonto" Width="7" Height="7" Fill="{StaticResource Ok}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                      <TextBlock x:Name="txtMeuStatus" FontSize="12" Foreground="{StaticResource Sub}"/>
+                    </StackPanel>
+                  </Grid>
+                  <StackPanel x:Name="amigosList"/>
+                  <TextBlock x:Name="txtSemAmigos" Style="{StaticResource Hint}" Margin="0,2,0,6" Text="Adicione o endereço do seu amigo (o IP do Radmin, como 26.12.34.56). Quando ele abrir o launcher, aparece aqui se está online, jogando ou com Hub aberto."/>
+                  <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBox x:Name="txtNovoAmigo"/>
+                    <TextBlock x:Name="hintNovoAmigo" Text="Endereço do amigo (ex.: 26.12.34.56)" FontSize="13" Foreground="#8E8E93" VerticalAlignment="Center" Margin="12,0,0,0" IsHitTestVisible="False"/>
+                    <Button x:Name="btnAddAmigo" Grid.Column="1" Style="{StaticResource Btn}" Content="Adicionar" Margin="8,0,0,0" Width="110"/>
+                  </Grid>
+                </StackPanel>
+              </Border>
               <UniformGrid x:Name="modeGrid" Columns="2" Margin="-6,0,-6,14">
                 <RadioButton x:Name="rbHost" Style="{StaticResource ModeCard}" Margin="6,0">
                   <StackPanel Orientation="Horizontal">
@@ -763,7 +783,7 @@
                   <TextBlock Text="IP do Radmin/ZeroTier (ex.: 26.12.34.56) ou da internet. Porta diferente: 1.2.3.4:39500." Style="{StaticResource Hint}" Margin="0,6,0,0"/>
                   <TextBlock x:Name="txtTest" FontSize="13" Margin="0,8,0,0"/>
                 </StackPanel></Border>
-                <Border Style="{StaticResource Card}"><StackPanel>
+                <Border Style="{StaticResource Card}" Visibility="Collapsed"><StackPanel>
                   <TextBlock Text="Amigos salvos" Style="{StaticResource CardTitle}"/>
                   <WrapPanel x:Name="friendsList"/>
                   <TextBlock x:Name="txtNoFriends" Text="Nenhum ainda. Digite o endereço e clique em Salvar amigo." Style="{StaticResource Hint}"/>

@@ -161,7 +161,7 @@ class Launcher
             Win.Loaded += (s, e) => Animar(Win, UIElement.OpacityProperty, 1, 280);
         }
 
-        Video(); Perf(); Perfis(); Ctrl(); Online(); Hunt(); Mods(); About(); Cacadores(); Versao(); HudDiag(); AutoUpdate(args); Cenas(); Visual(navs);
+        Video(); Perf(); Perfis(); Ctrl(); Online(); Hunt(); Mods(); About(); Cacadores(); Versao(); HudDiag(); AutoUpdate(args); Cenas(); Visual(navs); Presenca();
         carregando = false;
         Resumo();
 
@@ -650,10 +650,11 @@ class Launcher
                 saida = p.StandardOutput.ReadToEnd(); p.WaitForExit();
             }
             catch { }
-            bool ok = saida.Contains("MHGURecomp") && saida.Contains(ini.Get("Multiplayer", "Port", "39500"));
+            // a porta do jogo e a dos amigos online (porta + 1)
+            bool ok = saida.Contains("MHGURecomp") && saida.Contains(PortaJogo().ToString()) && saida.Contains((PortaJogo() + 1).ToString());
             Win.Dispatcher.Invoke(() =>
             {
-                t.Text = ok ? "Liberado para o jogo e a porta " + ini.Get("Multiplayer", "Port", "39500") + "." : "Ainda não liberado. Sem isso, amigos podem não conseguir entrar.";
+                t.Text = ok ? "Liberado para o jogo e as portas " + PortaJogo() + " e " + (PortaJogo() + 1) + "." : "Falta liberar (inclui a porta " + (PortaJogo() + 1) + ", que mostra você online para os amigos).";
                 t.Foreground = (Brush)Win.FindResource(ok ? "Ok" : "Sub");
                 F<Button>("btnFirewall").Content = ok ? "Liberado ✓" : "Liberar";
             });
@@ -665,7 +666,8 @@ class Launcher
         string cmd = "/c netsh advfirewall firewall delete rule name=\"MHGURecomp\" & " +
                      "netsh advfirewall firewall add rule name=\"MHGURecomp\" dir=in action=allow program=\"" + exe + "\" enable=yes & " +
                      "netsh advfirewall firewall add rule name=\"MHGURecomp\" dir=in action=allow protocol=TCP localport=" + porta + " & " +
-                     "netsh advfirewall firewall add rule name=\"MHGURecomp\" dir=in action=allow protocol=UDP localport=" + porta;
+                     "netsh advfirewall firewall add rule name=\"MHGURecomp\" dir=in action=allow protocol=UDP localport=" + porta + " & " +
+                     "netsh advfirewall firewall add rule name=\"MHGURecomp\" dir=in action=allow protocol=UDP localport=" + (PortaJogo() + 1);
         try
         {
             var pr = Process.Start(new ProcessStartInfo("cmd.exe", cmd) { Verb = "runas", UseShellExecute = true, WindowStyle = ProcessWindowStyle.Hidden });
@@ -932,6 +934,8 @@ class Launcher
         if (pc.Count == 0 && emus.Count > 0) { mostrar = LerSave(emus[0].Item2); origem = "save do " + emus[0].Item1 + " (ainda não está no PC)"; }
         F<TextBlock>("txtSaveSrc").Text = mostrar.Count > 0 ? origem : "";
         F<TextBlock>("txtWelcome").Text = mostrar.Count > 0 ? "Bem-vindo, " + mostrar[0].Nome + "!" : "Bem-vindo, caçador!";
+        if (mostrar.Count > 0) meuNome = mostrar[0].Nome;  // é assim que os amigos me veem
+        if (amigosTimer != null) AtualizarMinhaResposta();
 
         var painel = F<UniformGrid>("huntersPanel"); painel.Children.Clear();
         foreach (var c in mostrar)
@@ -1306,6 +1310,204 @@ class Launcher
         }
         finally { selfAtualizando = false; b1.IsEnabled = b2.IsEnabled = true; }
     }
+
+    // ---------- amigos online: cada launcher responde, na porta do jogo + 1 (UDP), quem é e o que está fazendo.
+    // Pergunta "MHGU?1"; resposta "MHGU!1|nome|versão do port|versão do launcher|sincronia|estado" (L launcher, J jogando, H Hub aberto)
+    class Status { public bool Online; public long Ping; public string Nome, Port, Launcher, Sync, Estado; }
+    System.Net.Sockets.UdpClient presenca; volatile string minhaResposta = ""; string meuNome = "Caçador"; bool presencaOk;
+    readonly Dictionary<string, Status> statusAmigos = new Dictionary<string, Status>();
+    DispatcherTimer amigosTimer; bool consultando;
+
+    int PortaJogo() { int p; return int.TryParse(ini.Get("Multiplayer", "Port", "39500"), out p) && p > 0 && p < 65535 ? p : 39500; }
+
+    void Presenca()
+    {
+        try
+        {
+            presenca = new System.Net.Sockets.UdpClient(new IPEndPoint(IPAddress.Any, PortaJogo() + 1));
+            presencaOk = true;
+            var th = new System.Threading.Thread(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        IPEndPoint de = null;
+                        var d = presenca.Receive(ref de);
+                        if (d.Length != 6 || Encoding.ASCII.GetString(d) != "MHGU?1") continue;  // só a pergunta exata
+                        var r = Encoding.UTF8.GetBytes(minhaResposta);
+                        presenca.Send(r, r.Length, de);
+                    }
+                    catch (ObjectDisposedException) { return; }
+                    catch { }
+                }
+            }) { IsBackground = true, Name = "presenca" };
+            th.Start();
+        }
+        catch { presencaOk = false; }  // (porta ocupada: outro launcher aberto)
+
+        var txt = F<TextBox>("txtNovoAmigo");
+        txt.TextChanged += (s, e) => F<TextBlock>("hintNovoAmigo").Visibility = txt.Text.Length > 0 ? Visibility.Collapsed : Visibility.Visible;
+        Action add = () =>
+        {
+            string a = txt.Text.Trim(); if (a.Length == 0) return;
+            var l = Amigos(); if (!l.Contains(a)) { l.Add(a); File.WriteAllLines(AmigosArq, l.ToArray()); }
+            txt.Text = ""; Toast("Amigo adicionado"); ListaAmigos(); MontarAmigos(); var _ = ConsultarAmigos();
+        };
+        F<Button>("btnAddAmigo").Click += (s, e) => add();
+        txt.KeyDown += (s, e) => { if (e.Key == Key.Enter) add(); };
+
+        AtualizarMinhaResposta();
+        amigosTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        int volta = 0;
+        amigosTimer.Tick += async (s, e) =>
+        {
+            AtualizarMinhaResposta();
+            // na página Online a cada 3 s; no resto a cada 15 s (para o resumo do Início)
+            bool naPagina = F<FrameworkElement>("pgOnline").Visibility == Visibility.Visible;
+            if (naPagina || ++volta % 5 == 0) await ConsultarAmigos();
+        };
+        Win.Loaded += async (s, e) => { MontarAmigos(); amigosTimer.Start(); await ConsultarAmigos(); };
+        Win.Closed += (s, e) => { try { presenca.Close(); } catch { } };
+    }
+
+    // o que os amigos veem de mim
+    void AtualizarMinhaResposta()
+    {
+        bool jogando = JogoAberto(), hub = false;
+        if (jogando)
+            try { hub = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Any(ep => ep.Port == PortaJogo()); } catch { }
+        string nome = (meuNome ?? "Caçador").Replace("|", "/");
+        minhaResposta = "MHGU!1|" + nome + "|" + (VersaoCompleta() ?? "?") + "|" + VERSAO + "|" + ini.Get("Multiplayer", "SyncSmallMonsters", "On") + "|" + (hub ? "H" : jogando ? "J" : "L");
+        F<TextBlock>("txtMeuStatus").Text = presencaOk ? "Você aparece como " + nome : "Presença desligada (outro launcher já está aberto)";
+        F<System.Windows.Shapes.Ellipse>("meuPonto").Fill = (Brush)Win.FindResource(presencaOk ? "Ok" : "Sub");
+    }
+
+    static async Task<Status> Consultar(string endereco, int portaPadrao)
+    {
+        string host = endereco; int porta = portaPadrao;
+        int c = endereco.LastIndexOf(':');
+        if (c > 0 && int.TryParse(endereco.Substring(c + 1), out porta)) host = endereco.Substring(0, c); else porta = portaPadrao;
+        var st = new Status();
+        try
+        {
+            using (var u = new System.Net.Sockets.UdpClient())
+            {
+                var pergunta = Encoding.ASCII.GetBytes("MHGU?1");
+                // duas medidas: a primeira inclui o preparo do socket; vale a menor.
+                // uma espera que passou do tempo continua valendo na tentativa seguinte (senão ela "rouba" a resposta)
+                Task<System.Net.Sockets.UdpReceiveResult> rec = null;
+                for (int tentativa = 0; tentativa < 3 && !(st.Online && tentativa >= 2); tentativa++)
+                {
+                    var sw = Stopwatch.StartNew();
+                    await u.SendAsync(pergunta, pergunta.Length, host, porta + 1);
+                    if (rec == null) rec = u.ReceiveAsync();
+                    if (await Task.WhenAny(rec, Task.Delay(1200)) != rec) continue;
+                    var chegou = rec; rec = null;
+                    if (chegou.IsFaulted) continue;
+                    var partes = Encoding.UTF8.GetString(chegou.Result.Buffer).Split('|');
+                    if (partes.Length < 6 || partes[0] != "MHGU!1") continue;
+                    long ms = sw.ElapsedMilliseconds;
+                    st.Ping = st.Online ? Math.Min(st.Ping, ms) : ms; st.Online = true;
+                    st.Nome = partes[1]; st.Port = partes[2]; st.Launcher = partes[3]; st.Sync = partes[4]; st.Estado = partes[5];
+                }
+            }
+        }
+        catch { }
+        return st;
+    }
+
+    async Task ConsultarAmigos()
+    {
+        if (consultando) return; consultando = true;
+        try
+        {
+            // cada amigo aparece assim que responde (um amigo offline não segura os outros)
+            var lista = Amigos(); int porta = PortaJogo();
+            await Task.WhenAll(lista.Select(async a =>
+            {
+                var st = await Consultar(a, porta);
+                statusAmigos[a] = st;
+                MontarAmigos(); Resumo();
+            }));
+        }
+        finally { consultando = false; }
+    }
+
+    void MontarAmigos()
+    {
+        var p = F<StackPanel>("amigosList"); p.Children.Clear();
+        var lista = Amigos();
+        F<TextBlock>("txtSemAmigos").Visibility = lista.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        string minhaVersao = VersaoCompleta() ?? "?", meuSync = ini.Get("Multiplayer", "SyncSmallMonsters", "On");
+        var sub = (Brush)Win.FindResource("Sub");
+        for (int i = 0; i < lista.Count; i++)
+        {
+            string end = lista[i];
+            Status st; statusAmigos.TryGetValue(end, out st);
+            bool online = st != null && st.Online;
+            if (i > 0) p.Children.Add(new System.Windows.Shapes.Rectangle { Height = 1, Fill = (Brush)Win.FindResource("Line"), Margin = new Thickness(50, 0, -18, 0) });
+            var g = new Grid { Margin = new Thickness(0, 9, 0, 9) };
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50) });
+            g.ColumnDefinitions.Add(new ColumnDefinition());
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            // avatar com a inicial e o pontinho de status
+            string nome = online && !string.IsNullOrWhiteSpace(st.Nome) ? st.Nome : end;
+            var av = new Grid { Width = 38, Height = 38, HorizontalAlignment = HorizontalAlignment.Left };
+            av.Children.Add(new Border { CornerRadius = new CornerRadius(19), Background = (Brush)Win.FindResource("GlassBtn"), BorderBrush = (Brush)Win.FindResource("Rim"), BorderThickness = new Thickness(1) });
+            av.Children.Add(new TextBlock { Text = online ? nome.Substring(0, 1).ToUpper() : "?", FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 16, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+            Brush cor = !online ? new SolidColorBrush(Color.FromRgb(0x63, 0x63, 0x66)) : st.Estado == "H" ? (Brush)Win.FindResource("Ok") : st.Estado == "J" ? new SolidColorBrush(Color.FromRgb(0x0A, 0x84, 0xFF)) : (Brush)Win.FindResource("Ok");
+            av.Children.Add(new System.Windows.Shapes.Ellipse { Width = 11, Height = 11, Fill = cor, Stroke = (Brush)Win.FindResource("Bg"), StrokeThickness = 2, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom });
+            g.Children.Add(av);
+
+            var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center }; Grid.SetColumn(info, 1);
+            info.Children.Add(new TextBlock { Text = nome, FontSize = 14, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
+            string estado = !online ? "Offline · " + end : st.Estado == "H" ? "Hub aberto · jogando" : st.Estado == "J" ? "Jogando" : "No launcher";
+            info.Children.Add(new TextBlock { Text = estado + (online ? " · " + end : ""), FontSize = 12, Foreground = sub, TextTrimming = TextTrimming.CharacterEllipsis });
+            if (online)
+            {
+                var avisos = new List<string>();
+                if (st.Port != minhaVersao) avisos.Add("port diferente (dele " + st.Port + ", seu " + minhaVersao + ")");
+                if (!string.Equals(st.Sync, meuSync, StringComparison.OrdinalIgnoreCase)) avisos.Add("sincronia de monstros pequenos diferente");
+                if (avisos.Count > 0) info.Children.Add(new TextBlock { Text = "⚠ " + string.Join(" · ", avisos), FontSize = 12, Foreground = (Brush)Win.FindResource("Bad"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            }
+            g.Children.Add(info);
+
+            if (online)
+            {
+                var pg = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 12, 0) }; Grid.SetColumn(pg, 2);
+                var corPing = st.Ping < 60 ? Color.FromRgb(0x30, 0xD1, 0x58) : st.Ping < 130 ? Color.FromRgb(0xFF, 0xD6, 0x0A) : Color.FromRgb(0xFF, 0x45, 0x3A);
+                pg.Children.Add(new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Fill = new SolidColorBrush(corPing), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
+                pg.Children.Add(new TextBlock { Text = st.Ping + " ms", FontSize = 12.5, Foreground = sub, VerticalAlignment = VerticalAlignment.Center });
+                g.Children.Add(pg);
+            }
+
+            var entrar = new Button { Content = online && st.Estado == "H" ? "Entrar no Hub" : "Entrar", Style = (Style)Win.FindResource("Btn"), VerticalAlignment = VerticalAlignment.Center, MinWidth = 96, IsEnabled = online };
+            if (online && st.Estado == "H") { entrar.Background = new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF7)); entrar.Foreground = new SolidColorBrush(Color.FromRgb(0x1C, 0x1C, 0x1E)); entrar.FontWeight = FontWeights.SemiBold; }
+            entrar.ToolTip = online ? "Configura o endereço dele e abre o jogo" : "Ele precisa estar com o launcher aberto";
+            entrar.Click += (s, e) => EntrarNoHub(end);
+            Grid.SetColumn(entrar, 3); g.Children.Add(entrar);
+
+            var x = new Button { Content = "", Style = (Style)Win.FindResource("IconBtn"), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Remover", Foreground = sub, VerticalAlignment = VerticalAlignment.Center };
+            x.Click += (s, e) => { var n = Amigos(); n.Remove(end); File.WriteAllLines(AmigosArq, n.ToArray()); statusAmigos.Remove(end); MontarAmigos(); ListaAmigos(); Resumo(); };
+            Grid.SetColumn(x, 4); g.Children.Add(x);
+            p.Children.Add(g);
+        }
+    }
+
+    void EntrarNoHub(string end)
+    {
+        F<RadioButton>("rbJoin").IsChecked = true;
+        F<TextBox>("txtJoin").Text = end;
+        ini.Set("Multiplayer", "Join", end);
+        Toast("Entrando com " + end + ": no jogo, Jogo Local > Procurar Hubs");
+        Jogar();
+    }
+
+    int AmigosOnline() { return statusAmigos.Count(kv => kv.Value.Online && Amigos().Contains(kv.Key)); }
 
     // ---------- perfis gráficos: Leve / Equilibrado / Ultra (montados pelo monitor; recomendado pela placa de vídeo)
     class Perfil { public string Nome, Render, Msaa; public bool Fxaa; public int Fps; }
@@ -1986,7 +2188,8 @@ class Launcher
         int mods = Directory.Exists(ModsOn) ? Directory.GetDirectories(ModsOn).Length : 0;
         F<TextBlock>("stMods").Text = mods + (mods == 1 ? " mod" : " mods");
         string j = ini.Get("Multiplayer", "Join", "");
-        F<TextBlock>("stOnline").Text = j.Length > 0 ? "Entrar" : "Hospedar";
+        int on = statusAmigos.Count == 0 ? 0 : AmigosOnline();
+        F<TextBlock>("stOnline").Text = on > 0 ? on + (on == 1 ? " amigo online" : " amigos online") : j.Length > 0 ? "Entrar" : "Hospedar";
         F<TextBlock>("stOnline").ToolTip = j.Length > 0 ? "Entrar no Hub de " + j : "Você cria o Hub (ou procura na rede local)";
         var hud = new List<string>();
         string a = AcharPlugin(NRO_HP), b = AcharPlugin(NRO_DMG);
