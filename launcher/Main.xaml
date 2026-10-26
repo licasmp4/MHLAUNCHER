@@ -1,45 +1,49 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MHGU Launcher" Width="1160" Height="760" MinWidth="820" MinHeight="600"
-        WindowStyle="None" ResizeMode="CanResize" AllowsTransparency="False" Background="#141416"
+        WindowStyle="None" ResizeMode="CanResize" AllowsTransparency="False" Background="#15110E"
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
   <WindowChrome.WindowChrome>
     <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0,0,0,1" CornerRadius="0" UseAeroCaptionButtons="False"/>
   </WindowChrome.WindowChrome>
   <Window.Resources>
-    <SolidColorBrush x:Key="Bg" Color="#141416"/>
-    <LinearGradientBrush x:Key="Side" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#1CFFFFFF" Offset="0"/><GradientStop Color="#0DFFFFFF" Offset="1"/></LinearGradientBrush>
-    <LinearGradientBrush x:Key="CardBg" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#21FFFFFF" Offset="0"/><GradientStop Color="#0FFFFFFF" Offset="1"/></LinearGradientBrush>
-    <LinearGradientBrush x:Key="Rim" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#59FFFFFF" Offset="0"/><GradientStop Color="#14FFFFFF" Offset="0.35"/><GradientStop Color="#0AFFFFFF" Offset="1"/></LinearGradientBrush>
-    <LinearGradientBrush x:Key="GlassBtn" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#38FFFFFF" Offset="0"/><GradientStop Color="#1FFFFFFF" Offset="1"/></LinearGradientBrush>
-    <FontFamily x:Key="Display">Segoe UI Variable Display, Segoe UI</FontFamily>
-    <SolidColorBrush x:Key="CardHi" Color="#33FFFFFF"/>
-    <SolidColorBrush x:Key="Line" Color="#26FFFFFF"/>
-    <SolidColorBrush x:Key="Text" Color="#F5F5F7"/>
-    <SolidColorBrush x:Key="Sub" Color="#A1A1A6"/>
-    <SolidColorBrush x:Key="Gold" Color="#D1D1D6"/>
-    <SolidColorBrush x:Key="GoldHi" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="Ok" Color="#30D158"/>
-    <SolidColorBrush x:Key="Bad" Color="#FF453A"/>
+    <!-- couro escuro, pergaminho e brasa -->
+    <SolidColorBrush x:Key="Bg" Color="#15110E"/>
+    <LinearGradientBrush x:Key="Side" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#F21B1613" Offset="0"/><GradientStop Color="#F2120F0C" Offset="1"/></LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardBg" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#EB221D19" Offset="0"/><GradientStop Color="#EB1A1613" Offset="1"/></LinearGradientBrush>
+    <LinearGradientBrush x:Key="Rim" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#806E5A47" Offset="0"/><GradientStop Color="#4D4A3C30" Offset="1"/></LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassBtn" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#FF2E2722" Offset="0"/><GradientStop Color="#FF241E1A" Offset="1"/></LinearGradientBrush>
+    <FontFamily x:Key="Display">Segoe UI</FontFamily>
+    <SolidColorBrush x:Key="CardHi" Color="#2E2722"/>
+    <SolidColorBrush x:Key="Line" Color="#3A3129"/>
+    <SolidColorBrush x:Key="Text" Color="#EDE3D1"/>
+    <SolidColorBrush x:Key="Sub" Color="#A3937D"/>
+    <SolidColorBrush x:Key="Gold" Color="#E0593A"/>
+    <SolidColorBrush x:Key="GoldHi" Color="#F28B6B"/>
+    <SolidColorBrush x:Key="Ember" Color="#E0593A"/>
+    <SolidColorBrush x:Key="Parch" Color="#E9DDC5"/>
+    <SolidColorBrush x:Key="Ink" Color="#2A1F16"/>
+    <SolidColorBrush x:Key="Ok" Color="#5FBFA0"/>
+    <SolidColorBrush x:Key="Bad" Color="#E8574A"/>
 
     <Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource Text}"/></Style>
-    <Style x:Key="H1" TargetType="TextBlock"><Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/><Setter Property="FontFamily" Value="{DynamicResource Display}"/><Setter Property="FontSize" Value="34"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="{StaticResource Text}"/><Setter Property="Margin" Value="2,0,0,2"/></Style>
-    <Style x:Key="H1Sub" TargetType="TextBlock"><Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="{StaticResource Sub}"/><Setter Property="Margin" Value="2,0,0,22"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
-    <Style x:Key="CardTitle" TargetType="TextBlock"><Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="{StaticResource Sub}"/><Setter Property="Margin" Value="0,4,0,6"/></Style>
-    <Style x:Key="Lbl" TargetType="TextBlock"><Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="{StaticResource Text}"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
-    <Style x:Key="Hint" TargetType="TextBlock"><Setter Property="FontSize" Value="12.5"/><Setter Property="Foreground" Value="{StaticResource Sub}"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,2,0,0"/></Style>
-    <Style x:Key="Val" TargetType="TextBlock"><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="{StaticResource GoldHi}"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="MinWidth" Value="56"/><Setter Property="TextAlignment" Value="Right"/></Style>
+    <Style x:Key="H1" TargetType="TextBlock"><Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/><Setter Property="FontFamily" Value="{DynamicResource Display}"/><Setter Property="FontSize" Value="32"/><Setter Property="FontWeight" Value="Black"/><Setter Property="Foreground" Value="{StaticResource Text}"/><Setter Property="Margin" Value="2,0,0,0"/></Style>
+    <Style x:Key="H1Sub" TargetType="TextBlock"><Setter Property="FontSize" Value="15.5"/><Setter Property="FontStyle" Value="Normal"/><Setter Property="Foreground" Value="{StaticResource Sub}"/><Setter Property="Margin" Value="3,2,0,22"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+    <Style x:Key="CardTitle" TargetType="TextBlock"><Setter Property="FontFamily" Value="{DynamicResource Display}"/><Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/><Setter Property="FontSize" Value="13.5"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="#C9AE8E"/><Setter Property="Margin" Value="0,4,0,8"/></Style>
+    <Style x:Key="Lbl" TargetType="TextBlock"><Setter Property="FontSize" Value="15.5"/><Setter Property="FontWeight" Value="Medium"/><Setter Property="Foreground" Value="{StaticResource Text}"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style x:Key="Hint" TargetType="TextBlock"><Setter Property="FontSize" Value="13.5"/><Setter Property="Foreground" Value="{StaticResource Sub}"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,1,0,0"/></Style>
+    <Style x:Key="Val" TargetType="TextBlock"><Setter Property="FontSize" Value="15.5"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="{StaticResource GoldHi}"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="MinWidth" Value="56"/><Setter Property="TextAlignment" Value="Right"/></Style>
 
     <Style x:Key="Card" TargetType="Border">
-      <Setter Property="Background" Value="{StaticResource CardBg}"/><Setter Property="CornerRadius" Value="14"/>
-      <Setter Property="Padding" Value="18,10"/><Setter Property="Margin" Value="0,0,0,18"/>
+      <Setter Property="Background" Value="{StaticResource CardBg}"/><Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="20,12"/><Setter Property="Margin" Value="0,0,0,18"/>
       <Setter Property="BorderBrush" Value="{StaticResource Rim}"/><Setter Property="BorderThickness" Value="1"/>
     </Style>
     <Style x:Key="Row" TargetType="Grid"><Setter Property="Margin" Value="0,9,0,9"/></Style>
 
     <!-- item do menu lateral: pílula como no Apple Music -->
     <Style x:Key="Nav" TargetType="RadioButton">
-      <Setter Property="Foreground" Value="{StaticResource Text}"/><Setter Property="FontSize" Value="13.5"/>
+      <Setter Property="Foreground" Value="{StaticResource Text}"/><Setter Property="FontSize" Value="15"/>
       <Setter Property="Cursor" Value="Hand"/><Setter Property="GroupName" Value="nav"/>
       <Setter Property="Template"><Setter.Value>
         <ControlTemplate TargetType="RadioButton">
@@ -49,7 +53,7 @@
             <Border x:Name="b" Background="{StaticResource GlassBtn}" BorderBrush="{StaticResource Rim}" BorderThickness="1" Opacity="0" CornerRadius="9"/>
             <Grid Margin="10,7">
               <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition/></Grid.ColumnDefinitions>
-              <TextBlock x:Name="ic" Text="{TemplateBinding Tag}" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="#C7C7CC" VerticalAlignment="Center"/>
+              <Path x:Name="ic" Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Stretch="Uniform" Width="17" Height="17" HorizontalAlignment="Left" Stroke="#BFAE95" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" VerticalAlignment="Center"/>
               <ContentPresenter x:Name="txt" Grid.Column="1" VerticalAlignment="Center"/>
             </Grid>
           </Grid>
@@ -59,7 +63,8 @@
               <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="hov" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
             </Trigger>
             <Trigger Property="IsChecked" Value="True">
-              <Setter Property="FontWeight" Value="SemiBold"/>
+              <Setter Property="FontWeight" Value="Bold"/>
+              <Setter TargetName="ic" Property="Stroke" Value="#F28B6B"/>
               <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
               <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
             </Trigger>
@@ -88,15 +93,15 @@
       <Setter Property="Template"><Setter.Value>
         <ControlTemplate TargetType="CheckBox">
           <Grid Width="44" Height="26">
-            <Border CornerRadius="13" Background="#48484A"/>
-            <Border x:Name="on" CornerRadius="13" Background="#F5F5F7" Opacity="0"/>
-            <Ellipse x:Name="k" Width="22" Height="22" Fill="#FFFFFF" HorizontalAlignment="Left" Margin="2,0">
+            <Border CornerRadius="13" Background="#3A3129"/>
+            <Border x:Name="on" CornerRadius="13" Background="{StaticResource Ember}" Opacity="0"/>
+            <Ellipse x:Name="k" Width="22" Height="22" Fill="#CDBFA8" HorizontalAlignment="Left" Margin="2,0">
               <Ellipse.RenderTransform><TranslateTransform x:Name="kx"/></Ellipse.RenderTransform>
             </Ellipse>
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsChecked" Value="True">
-              <Setter TargetName="k" Property="Fill" Value="#1C1C1E"/>
+              <Setter TargetName="k" Property="Fill" Value="#FFF4E6"/>
               <Trigger.EnterActions><BeginStoryboard><Storyboard>
                 <DoubleAnimation Storyboard.TargetName="kx" Storyboard.TargetProperty="X" To="18" Duration="0:0:0.18"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
                 <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
@@ -115,7 +120,7 @@
     <!-- slider -->
     <Style x:Key="ThumbS" TargetType="Thumb">
       <Setter Property="Template"><Setter.Value>
-        <ControlTemplate TargetType="Thumb"><Ellipse Width="18" Height="18" Fill="{StaticResource GoldHi}" Stroke="#141416" StrokeThickness="3"/></ControlTemplate>
+        <ControlTemplate TargetType="Thumb"><Ellipse Width="18" Height="18" Fill="#F3E9D6" Stroke="{StaticResource Ember}" StrokeThickness="3"/></ControlTemplate>
       </Setter.Value></Setter>
     </Style>
     <Style x:Key="RepS" TargetType="RepeatButton">
@@ -179,24 +184,24 @@
           <Grid RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform><ScaleTransform x:Name="sc"/></Grid.RenderTransform>
             <Border x:Name="b" CornerRadius="10" Padding="0,14">
-              <Border.Effect><DropShadowEffect x:Name="glow" Color="#FFFFFF" BlurRadius="16" ShadowDepth="0" Opacity="0"/></Border.Effect>
-              <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#FFFFFF" Offset="0"/><GradientStop Color="#D1D1D6" Offset="1"/></LinearGradientBrush></Border.Background>
+              <Border.Effect><DropShadowEffect x:Name="glow" Color="#FF6A3D" BlurRadius="18" ShadowDepth="0" Opacity="0.25"/></Border.Effect>
+              <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#EE6A43" Offset="0"/><GradientStop Color="#B5381F" Offset="1"/></LinearGradientBrush></Border.Background>
               <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#1C1C1E" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <ContentPresenter TextElement.FontSize="15" TextElement.FontWeight="SemiBold" TextElement.Foreground="#1C1C1E" VerticalAlignment="Center"/>
+                <Path Data="M18.5,3 L20.5,5 L9,16.5 L7,14.5 Z M5.5,13 L10.5,18 M7.5,16 L4,19.5" Stretch="Uniform" Width="16" Height="16" Stroke="#FFF4E6" StrokeThickness="1.8" StrokeLineJoin="Round" StrokeEndLineCap="Round" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ContentPresenter TextElement.FontFamily="{DynamicResource Display}" TextElement.FontSize="15" TextElement.FontWeight="Black" TextElement.Foreground="#FFF4E6" VerticalAlignment="Center"/>
               </StackPanel>
             </Border>
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
               <Trigger.EnterActions><BeginStoryboard><Storyboard>
-                <DoubleAnimation Storyboard.TargetName="glow" Storyboard.TargetProperty="Opacity" To="0.35" Duration="0:0:0.2"/>
+                <DoubleAnimation Storyboard.TargetName="glow" Storyboard.TargetProperty="Opacity" To="0.8" Duration="0:0:0.2"/>
                 <DoubleAnimation Storyboard.TargetName="glow" Storyboard.TargetProperty="BlurRadius" To="30" Duration="0:0:0.2"/>
                 <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1.02" Duration="0:0:0.2"/>
                 <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1.02" Duration="0:0:0.2"/>
               </Storyboard></BeginStoryboard></Trigger.EnterActions>
               <Trigger.ExitActions><BeginStoryboard><Storyboard>
-                <DoubleAnimation Storyboard.TargetName="glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25"/>
+                <DoubleAnimation Storyboard.TargetName="glow" Storyboard.TargetProperty="Opacity" To="0.25" Duration="0:0:0.25"/>
                 <DoubleAnimation Storyboard.TargetName="glow" Storyboard.TargetProperty="BlurRadius" To="18" Duration="0:0:0.25"/>
                 <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.25"/>
                 <DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.25"/>
@@ -257,7 +262,7 @@
         <ControlTemplate TargetType="Button">
           <Grid RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform><ScaleTransform x:Name="sc"/></Grid.RenderTransform>
-            <Ellipse Fill="#E62C2C2E" Stroke="#26FFFFFF"><Ellipse.Effect><DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.5"/></Ellipse.Effect></Ellipse>
+            <Ellipse Fill="#F2201B17" Stroke="#26FFFFFF"><Ellipse.Effect><DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.5"/></Ellipse.Effect></Ellipse>
             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Grid>
           <ControlTemplate.Triggers>
@@ -338,7 +343,7 @@
             <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" IsHitTestVisible="False" Margin="12,0,30,0" VerticalAlignment="Center"/>
             <TextBox x:Name="PART_EditableTextBox" Visibility="Hidden" Background="Transparent" BorderThickness="0" Margin="2,0,28,0" VerticalAlignment="Center"/>
             <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
-              <Border Background="#F22C2C2E" BorderBrush="#38383A" BorderThickness="1" CornerRadius="7" Padding="4" Margin="0,4,0,0"
+              <Border Background="#F7201B17" BorderBrush="#38383A" BorderThickness="1" CornerRadius="7" Padding="4" Margin="0,4,0,0"
                       MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="300">
                 <ScrollViewer><ItemsPresenter/></ScrollViewer>
               </Border>
@@ -378,7 +383,11 @@
       <Grid x:Name="bgLayer" Grid.ColumnSpan="2" IsHitTestVisible="False">
         <Image x:Name="bgA" Stretch="UniformToFill" Opacity="0" RenderOptions.BitmapScalingMode="Linear"/>
         <Image x:Name="bgB" Stretch="UniformToFill" Opacity="0" RenderOptions.BitmapScalingMode="Linear"/>
-        <Rectangle Fill="#A30B0B0D"/>
+        <Rectangle Fill="#B3120E0B"/>
+        <Rectangle x:Name="grain" Opacity="0.55"/>
+        <Rectangle>
+          <Rectangle.Fill><RadialGradientBrush RadiusX="0.75" RadiusY="0.8"><GradientStop Color="#00000000" Offset="0.55"/><GradientStop Color="#99000000" Offset="1"/></RadialGradientBrush></Rectangle.Fill>
+        </Rectangle>
       </Grid>
 
       <!-- menu lateral (estilo Apple Music) -->
@@ -391,7 +400,7 @@
                 <Border.Background><ImageBrush x:Name="imgLogo" Stretch="UniformToFill"/></Border.Background>
               </Border>
               <StackPanel x:Name="brandText" Margin="11,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="Monster Hunter" FontFamily="{DynamicResource Display}" FontSize="15" FontWeight="Bold"/>
+                <TextBlock Text="Monster Hunter" FontFamily="{DynamicResource Display}" FontSize="15.5" FontWeight="Black" TextOptions.TextFormattingMode="Ideal"/>
                 <TextBlock x:Name="txtLauncherVer" Text="Generations Ultimate" FontSize="11.5" Foreground="{StaticResource Sub}"/>
               </StackPanel>
             </StackPanel>
@@ -399,10 +408,10 @@
             <Grid x:Name="searchBox" Margin="0,16,0,0">
               <Border Background="{StaticResource GlassBtn}" BorderBrush="{StaticResource Rim}" BorderThickness="1" CornerRadius="9" Height="32"/>
               <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource Sub}" VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False"/>
-              <TextBlock x:Name="searchHint" Text="Buscar ajuste" FontSize="13" Foreground="#8E8E93" VerticalAlignment="Center" Margin="30,0,0,0" IsHitTestVisible="False"/>
+              <TextBlock x:Name="searchHint" Text="Buscar ajuste" FontSize="13" Foreground="#8C7E6B" VerticalAlignment="Center" Margin="30,0,0,0" IsHitTestVisible="False"/>
               <TextBox x:Name="txtSearch" Style="{StaticResource Plain}"/>
               <Popup x:Name="searchPop" PlacementTarget="{Binding ElementName=searchBox}" Placement="Bottom" AllowsTransparency="True" PopupAnimation="Fade" StaysOpen="False">
-                <Border Background="#F22C2C2E" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="10" Padding="6" Margin="0,6,0,0" Width="300" MaxHeight="340">
+                <Border Background="#F7201B17" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="10" Padding="6" Margin="0,6,0,0" Width="300" MaxHeight="340">
                   <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="searchList"/></ScrollViewer>
                 </Border>
               </Popup>
@@ -410,23 +419,23 @@
           </StackPanel>
           <Border DockPanel.Dock="Bottom" Padding="16,10,16,18">
             <StackPanel>
-              <Button x:Name="btnPlay" Style="{StaticResource Play}" Content="Jogar"/>
+              <Button x:Name="btnPlay" Style="{StaticResource Play}" Content="Partir em missão"/>
               <TextBlock x:Name="txtCredit" FontSize="11" HorizontalAlignment="Center" Margin="0,10,0,0" Foreground="{StaticResource Sub}">feito por <Run Text="licas.mp3" Foreground="{StaticResource GoldHi}" FontWeight="SemiBold"/></TextBlock>
             </StackPanel>
           </Border>
           <ScrollViewer x:Name="navScroll" VerticalScrollBarVisibility="Hidden">
             <StackPanel Margin="0,6,0,0">
-              <TextBlock x:Name="capPlay" Text="Jogar" FontSize="11" FontWeight="SemiBold" Foreground="#8E8E93" Margin="26,10,0,4"/>
-              <RadioButton x:Name="navHome" Style="{StaticResource Nav}" Tag="&#xE80F;" Content="Início" IsChecked="True"/>
-              <RadioButton x:Name="navOnline" Style="{StaticResource Nav}" Tag="&#xE774;" Content="Online"/>
-              <RadioButton x:Name="navHunt" Style="{StaticResource Nav}" Tag="&#xE9D9;" Content="Caçada"/>
-              <TextBlock x:Name="capSet" Text="Ajustes" FontSize="11" FontWeight="SemiBold" Foreground="#8E8E93" Margin="26,14,0,4"/>
-              <RadioButton x:Name="navVideo" Style="{StaticResource Nav}" Tag="&#xE7F4;" Content="Gráficos"/>
-              <RadioButton x:Name="navPerf" Style="{StaticResource Nav}" Tag="&#xEC4A;" Content="FPS e Hz"/>
-              <RadioButton x:Name="navCtrl" Style="{StaticResource Nav}" Tag="&#xE7FC;" Content="Controles"/>
-              <TextBlock x:Name="capMore" Text="Mais" FontSize="11" FontWeight="SemiBold" Foreground="#8E8E93" Margin="26,14,0,4"/>
-              <RadioButton x:Name="navMods" Style="{StaticResource Nav}" Tag="&#xE74C;" Content="Mods e Cheats"/>
-              <RadioButton x:Name="navAbout" Style="{StaticResource Nav}" Tag="&#xE946;" Content="Sobre"/>
+              <TextBlock x:Name="capPlay" Text="Jogar" FontFamily="{DynamicResource Display}" FontSize="11.5" FontWeight="Bold" Foreground="#8C7E6B" Margin="26,10,0,4"/>
+              <RadioButton x:Name="navHome" Style="{StaticResource Nav}" Tag="M12,2.5 L19.5,5.5 V11 C19.5,16 16.3,19.6 12,21.5 C7.7,19.6 4.5,16 4.5,11 V5.5 Z M12,7 V16 M8.5,10.5 H15.5" Content="Início" IsChecked="True"/>
+              <RadioButton x:Name="navOnline" Style="{StaticResource Nav}" Tag="M5,21 V3 M5,4 H18 L15,8.5 L18,13 H5" Content="Online"/>
+              <RadioButton x:Name="navHunt" Style="{StaticResource Nav}" Tag="M18.5,3 L20.5,5 L9,16.5 L7,14.5 Z M5.5,13 L10.5,18 M7.5,16 L4,19.5 M3.2,18.7 L4.8,20.3" Content="Caçada"/>
+              <TextBlock x:Name="capSet" Text="Ajustes" FontFamily="{DynamicResource Display}" FontSize="11.5" FontWeight="Bold" Foreground="#8C7E6B" Margin="26,14,0,4"/>
+              <RadioButton x:Name="navVideo" Style="{StaticResource Nav}" Tag="M2.5,12 C5.5,6.5 18.5,6.5 21.5,12 C18.5,17.5 5.5,17.5 2.5,12 Z M12,9 A3,3 0 1 1 11.99,9 Z" Content="Gráficos"/>
+              <RadioButton x:Name="navPerf" Style="{StaticResource Nav}" Tag="M6.5,3 H17.5 M6.5,21 H17.5 M8,3 C8,9 16,9 16,12 C16,15 8,15 8,21 M16,3 C16,9 8,9 8,12 C8,15 16,15 16,21" Content="FPS e Hz"/>
+              <RadioButton x:Name="navCtrl" Style="{StaticResource Nav}" Tag="M7,8 H17 C20,8 21.5,11 21.5,14 C21.5,17 19.5,18 18,16.5 L16,14.5 H8 L6,16.5 C4.5,18 2.5,17 2.5,14 C2.5,11 4,8 7,8 Z M7.5,10.5 V13.5 M6,12 H9 M15.5,11 H15.6 M17.5,13 H17.6" Content="Controles"/>
+              <TextBlock x:Name="capMore" Text="Mais" FontFamily="{DynamicResource Display}" FontSize="11.5" FontWeight="Bold" Foreground="#8C7E6B" Margin="26,14,0,4"/>
+              <RadioButton x:Name="navMods" Style="{StaticResource Nav}" Tag="M8.5,7.5 C8.5,4 15.5,4 15.5,7.5 M4.5,8 H19.5 L18,20.5 H6 Z M9.5,12 H14.5" Content="Mods e Cheats"/>
+              <RadioButton x:Name="navAbout" Style="{StaticResource Nav}" Tag="M7,4 H18.5 C20,4 20,7.5 18.5,7.5 H17 V20 H5.5 C4,20 4,16.5 5.5,16.5 H7 Z M7,16.5 V4 M10,9.5 H14 M10,12.5 H14" Content="Sobre"/>
             </StackPanel>
           </ScrollViewer>
         </DockPanel>
@@ -465,17 +474,17 @@
         </Border>
 
         <Border x:Name="toastBox" Grid.Row="1" Panel.ZIndex="10" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,22"
-                Background="#F22C2C2E" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="18" Padding="16,8" Opacity="0" IsHitTestVisible="False">
+                Background="#F7E9DDC5" BorderBrush="#B08A5C" BorderThickness="1.5" CornerRadius="4" Padding="18,9" Opacity="0" IsHitTestVisible="False">
           <Border.RenderTransform><TranslateTransform x:Name="toastY" Y="12"/></Border.RenderTransform>
           <Border.Effect><DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.5"/></Border.Effect>
-          <TextBlock x:Name="txtToast" Text="" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Text}"/>
+          <TextBlock x:Name="txtToast" Text="" FontSize="14.5" FontWeight="Bold" Foreground="{StaticResource Ink}"/>
         </Border>
         <Grid x:Name="pages" Grid.Row="1" Margin="34,0,26,24">
 
           <!-- INÍCIO -->
           <ScrollViewer x:Name="pgHome" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="0,0,8,0">
-              <Border x:Name="hero" CornerRadius="20" Height="300" Margin="0,0,0,18" BorderBrush="{StaticResource Rim}" BorderThickness="1">
+              <Border x:Name="hero" CornerRadius="8" Height="300" Margin="0,0,0,18" BorderBrush="{StaticResource Rim}" BorderThickness="1">
                 <Border.Background>
                   <LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#12151C" Offset="0"/><GradientStop Color="#171C27" Offset="0.6"/><GradientStop Color="#2A2216" Offset="1"/></LinearGradientBrush>
                 </Border.Background>
@@ -487,10 +496,10 @@
                       <Rectangle x:Name="vidFade" Fill="Black" Opacity="1"/>
                     </Grid>
                   </Grid>
-                  <Rectangle RadiusX="17" RadiusY="17" IsHitTestVisible="False">
+                  <Rectangle RadiusX="7" RadiusY="7" IsHitTestVisible="False">
                     <Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#00000000" Offset="0.35"/><GradientStop Color="#E60B0D12" Offset="1"/></LinearGradientBrush></Rectangle.Fill>
                   </Rectangle>
-                  <Rectangle RadiusX="17" RadiusY="17" IsHitTestVisible="False">
+                  <Rectangle RadiusX="7" RadiusY="7" IsHitTestVisible="False">
                     <Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#990B0D12" Offset="0"/><GradientStop Color="#000B0D12" Offset="0.6"/></LinearGradientBrush></Rectangle.Fill>
                   </Rectangle>
                   <Grid x:Name="heroArt">
@@ -499,7 +508,7 @@
                   </Ellipse>
                   <Viewbox HorizontalAlignment="Right" Margin="0,18,56,18" IsHitTestVisible="False">
                     <Canvas Width="220" Height="230">
-                      <Canvas.Resources><LinearGradientBrush x:Key="claw" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#FFFFFF" Offset="0"/><GradientStop Color="#8E8E93" Offset="1"/></LinearGradientBrush></Canvas.Resources>
+                      <Canvas.Resources><LinearGradientBrush x:Key="claw" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#FFFFFF" Offset="0"/><GradientStop Color="#8C7E6B" Offset="1"/></LinearGradientBrush></Canvas.Resources>
                       <Path x:Name="claw1" Data="M10,25 C65,75 95,145 90,220" Stroke="{StaticResource claw}" StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Opacity="0.9"/>
                       <Path x:Name="claw2" Data="M60,10 C115,65 150,140 145,217" Stroke="{StaticResource claw}" StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Opacity="0.9"/>
                       <Path x:Name="claw3" Data="M110,0 C167,55 205,135 200,213" Stroke="{StaticResource claw}" StrokeThickness="10" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Opacity="0.9"/>
@@ -515,10 +524,13 @@
                     </StackPanel>
                   </Border>
                   <StackPanel VerticalAlignment="Bottom" Margin="28,0,28,26">
-                    <TextBlock Text="MHGU LAUNCHER" FontSize="12" FontWeight="Bold" Foreground="{StaticResource GoldHi}" Margin="0,0,0,4"/>
-                    <TextBlock x:Name="txtWelcome" Text="Bem-vindo, caçador!" TextOptions.TextFormattingMode="Ideal" FontFamily="{DynamicResource Display}" FontSize="40" FontWeight="ExtraBold"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                      <Border Background="{StaticResource Ember}" CornerRadius="3" Padding="8,2,8,3"><TextBlock Text="Missão em destaque" FontFamily="{DynamicResource Display}" FontSize="11.5" FontWeight="Black" Foreground="#FFF4E6"/></Border>
+                      <TextBlock x:Name="txtStars" Text="★★★★★★" FontSize="14" Foreground="#F3C9A0" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    </StackPanel>
+                    <TextBlock x:Name="txtWelcome" Text="Bem-vindo, caçador!" TextOptions.TextFormattingMode="Ideal" FontFamily="{DynamicResource Display}" FontSize="38" FontWeight="Black"/>
                     <TextBlock Text="Tradução pt-BR por licas.mp3 · texturas HD · botões de PlayStation" FontSize="14" Foreground="#D9E0E6EE" Margin="0,4,0,0"/>
-                    <TextBlock x:Name="txtHeroInfo" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource GoldHi}" Margin="0,10,0,0"/>
+                    <TextBlock x:Name="txtHeroInfo" FontSize="14" FontWeight="Bold" Foreground="#F3C9A0" Margin="0,10,0,0"/>
                   </StackPanel>
                   <StackPanel x:Name="sceneDots" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,26,30"/>
                 </Grid>
@@ -526,8 +538,8 @@
               <Border x:Name="scenesCard" Visibility="Collapsed" Margin="0,0,0,16">
                 <StackPanel>
                   <Grid Margin="2,0,2,10">
-                    <TextBlock FontFamily="{DynamicResource Display}" FontSize="23" FontWeight="Bold">Cenas do jogo <Run Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="13" Foreground="#8E8E93"/></TextBlock>
-                    <TextBlock Text="clique para ver em destaque" FontSize="12" Foreground="{StaticResource Sub}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                    <TextBlock FontFamily="{DynamicResource Display}" TextOptions.TextFormattingMode="Ideal" FontSize="22" FontWeight="Black">Quadro de missões <Run Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="13" Foreground="#8C7E6B"/></TextBlock>
+                    <TextBlock Text="escolha o cartaz para ver em destaque" FontSize="12" Foreground="{StaticResource Sub}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                   </Grid>
                   <Grid x:Name="shelf">
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" x:Name="scenesScroll">
@@ -563,10 +575,10 @@
                 </Grid>
               </Border>
               <UniformGrid x:Name="statsGrid" Columns="4" Margin="-6,0,-6,14">
-                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Resolução" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stRes" FontFamily="{DynamicResource Display}" FontSize="20" FontWeight="Bold"/></StackPanel></Border>
-                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Limite de FPS" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stFps" FontFamily="{DynamicResource Display}" FontSize="20" FontWeight="Bold"/></StackPanel></Border>
-                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Mods ativos" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stMods" FontFamily="{DynamicResource Display}" FontSize="20" FontWeight="Bold"/></StackPanel></Border>
-                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Online" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stOnline" FontFamily="{DynamicResource Display}" FontSize="20" FontWeight="Bold"/></StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Resolução" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stRes" FontFamily="{DynamicResource Display}" FontSize="17" FontWeight="Black" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Limite de FPS" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stFps" FontFamily="{DynamicResource Display}" FontSize="17" FontWeight="Black" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Mods ativos" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stMods" FontFamily="{DynamicResource Display}" FontSize="17" FontWeight="Black" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="6,0"><StackPanel><TextBlock Text="Online" Style="{StaticResource CardTitle}"/><TextBlock x:Name="stOnline" FontFamily="{DynamicResource Display}" FontSize="17" FontWeight="Black" TextTrimming="CharacterEllipsis"/></StackPanel></Border>
               </UniformGrid>
               <Border Style="{StaticResource Card}">
                 <StackPanel>
@@ -732,7 +744,7 @@
                   <Grid Margin="0,10,0,0">
                     <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <TextBox x:Name="txtNovoAmigo"/>
-                    <TextBlock x:Name="hintNovoAmigo" Text="Endereço do amigo (ex.: 26.12.34.56)" FontSize="13" Foreground="#8E8E93" VerticalAlignment="Center" Margin="12,0,0,0" IsHitTestVisible="False"/>
+                    <TextBlock x:Name="hintNovoAmigo" Text="Endereço do amigo (ex.: 26.12.34.56)" FontSize="13" Foreground="#8C7E6B" VerticalAlignment="Center" Margin="12,0,0,0" IsHitTestVisible="False"/>
                     <Button x:Name="btnAddAmigo" Grid.Column="1" Style="{StaticResource Btn}" Content="Adicionar" Margin="8,0,0,0" Width="110"/>
                   </Grid>
                 </StackPanel>
@@ -858,7 +870,7 @@
               <TextBlock Text="Sobre" Style="{StaticResource H1}"/>
               <TextBlock Text="Quem fez cada parte." Style="{StaticResource H1Sub}"/>
               <Border CornerRadius="10" Padding="22,18" Margin="0,0,0,14" BorderBrush="{StaticResource Gold}" BorderThickness="1">
-                <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#2A2216" Offset="0"/><GradientStop Color="#F22C2C2E" Offset="1"/></LinearGradientBrush></Border.Background>
+                <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#2A2216" Offset="0"/><GradientStop Color="#F7201B17" Offset="1"/></LinearGradientBrush></Border.Background>
                 <StackPanel Orientation="Horizontal">
                   <TextBlock Text="&#xE734;" FontFamily="Segoe MDL2 Assets" FontSize="30" Foreground="{StaticResource Gold}" VerticalAlignment="Center" Margin="0,0,18,0"/>
                   <StackPanel>

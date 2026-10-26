@@ -213,8 +213,8 @@ class Launcher
         if (Array.IndexOf(args, "--salvar") >= 0) Win.ContentRendered += (s, e) => { SalvarAgora(); Win.Close(); };
     }
 
-    // ---------- fontes: Inter (texto) e Inter Display (títulos), embutidas no exe (licença SIL OFL 1.1)
-    static readonly string[] FONTES = { "Inter-Regular", "Inter-Medium", "Inter-SemiBold", "Inter-Bold", "InterDisplay-SemiBold", "InterDisplay-Bold", "InterDisplay-ExtraBold" };
+    // ---------- fontes: Alegreya Sans (texto) e Cinzel (títulos, letras de guilda), embutidas no exe (licença SIL OFL 1.1)
+    static readonly string[] FONTES = { "AlegreyaSans-Regular", "AlegreyaSans-Medium", "AlegreyaSans-Bold", "AlegreyaSans-ExtraBold", "Cinzel-SemiBold", "Cinzel-Bold", "Cinzel-Black" };
     void Fontes()
     {
         try
@@ -233,8 +233,8 @@ class Launcher
                 }
             }
             var baseUri = new Uri(pasta + Path.DirectorySeparatorChar);
-            Win.FontFamily = new FontFamily(baseUri, "./#Inter, Segoe UI");
-            Win.Resources["Display"] = new FontFamily(baseUri, "./#Inter Display, Segoe UI Variable Display, Segoe UI");
+            Win.FontFamily = new FontFamily(baseUri, "./#Alegreya Sans, Segoe UI");
+            Win.Resources["Display"] = new FontFamily(baseUri, "./#Cinzel, Segoe UI");
         }
         catch { }  // sem as fontes, fica a do Windows
     }
@@ -254,7 +254,7 @@ class Launcher
     void Mudou() { if (!carregando) { salvarDepois.Stop(); salvarDepois.Start(); Resumo(); PerfilAtual(); } }
     void Toast(string t)
     {
-        F<TextBlock>("txtToast").Text = "✓  " + t;
+        F<TextBlock>("txtToast").Text = "✦  " + t;
         Animar(F<Border>("toastBox"), UIElement.OpacityProperty, 1, 180);
         Animar(F<TranslateTransform>("toastY"), TranslateTransform.YProperty, 0, 220);
         toastTimer.Stop(); toastTimer.Start();
@@ -940,15 +940,24 @@ class Launcher
         var painel = F<UniformGrid>("huntersPanel"); painel.Children.Clear();
         foreach (var c in mostrar)
         {
-            var b = new Border { Background = (Brush)Win.FindResource("CardHi"), CornerRadius = new CornerRadius(8), Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(6, 0, 6, 0) };
-            var sp = new StackPanel();
-            sp.Children.Add(new TextBlock { Text = "Personagem " + c.Slot, FontSize = 11, FontWeight = FontWeights.Bold, Foreground = (Brush)Win.FindResource("Sub") });
-            sp.Children.Add(new TextBlock { Text = c.Nome, FontSize = 18, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis });
-            var info = new TextBlock { FontSize = 12, Foreground = (Brush)Win.FindResource("Sub"), Margin = new Thickness(0, 2, 0, 0) };
-            info.Inlines.Add(new System.Windows.Documents.Run("HR " + c.Hr) { Foreground = (Brush)Win.FindResource("GoldHi"), FontWeight = FontWeights.SemiBold });
-            info.Inlines.Add(new System.Windows.Documents.Run("  ·  " + (c.Horas < 1 ? (int)(c.Horas * 60) + " min" : Num(c.Horas, "0.#") + " h") + "  ·  " + c.Zenny.ToString("N0", new CultureInfo("pt-BR")) + " z"));
-            sp.Children.Add(info);
-            b.Child = sp; painel.Children.Add(b);
+            // Cartão de Guilda: selo de HR, nome em letras de guilda, horas e zenny
+            var b = new Border { Background = (Brush)Win.FindResource("GlassBtn"), BorderBrush = (Brush)Win.FindResource("Rim"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(12, 10, 14, 10), Margin = new Thickness(6, 0, 6, 0) };
+            var g = new Grid();
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
+            g.ColumnDefinitions.Add(new ColumnDefinition());
+            var selo = new Grid { Width = 48, Height = 48, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+            selo.Children.Add(new System.Windows.Shapes.Ellipse { Fill = new RadialGradientBrush(Color.FromRgb(0xEE, 0x6A, 0x43), Color.FromRgb(0x9A, 0x2E, 0x18)), Stroke = new SolidColorBrush(Color.FromRgb(0xF3, 0xC9, 0xA0)), StrokeThickness = 1.5 });
+            var sv = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            sv.Children.Add(new TextBlock { Text = "HR", FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 9, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xE3, 0xCC)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, -3) });
+            sv.Children.Add(new TextBlock { Text = c.Hr.ToString(), FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 18, FontWeight = FontWeights.Black, Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xF4, 0xE6)), HorizontalAlignment = HorizontalAlignment.Center });
+            selo.Children.Add(sv);
+            g.Children.Add(selo);
+            var sp = new StackPanel { VerticalAlignment = VerticalAlignment.Center }; Grid.SetColumn(sp, 1);
+            sp.Children.Add(new TextBlock { Text = "Cartão de Guilda · " + c.Slot + "º personagem", FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 10.5, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xAE, 0x8E)) });
+            sp.Children.Add(new TextBlock { Text = c.Nome, FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 18, FontWeight = FontWeights.Black, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 1) });
+            sp.Children.Add(new TextBlock { Text = (c.Horas < 1 ? (int)(c.Horas * 60) + " min" : Num(c.Horas, "0.#") + " h") + " de caça  ·  " + c.Zenny.ToString("N0", new CultureInfo("pt-BR")) + " z", FontSize = 13, Foreground = (Brush)Win.FindResource("Sub") });
+            g.Children.Add(sp);
+            b.Child = g; painel.Children.Add(b);
         }
         if (mostrar.Count == 0) painel.Children.Add(new TextBlock { Text = "Nenhum caçador ainda. Crie um no jogo ou importe seu save do Switch/emulador.", Style = (Style)Win.FindResource("Hint"), Margin = new Thickness(6, 0, 6, 0) });
 
@@ -1486,7 +1495,7 @@ class Launcher
             }
 
             var entrar = new Button { Content = online && st.Estado == "H" ? "Entrar no Hub" : "Entrar", Style = (Style)Win.FindResource("Btn"), VerticalAlignment = VerticalAlignment.Center, MinWidth = 96, IsEnabled = online };
-            if (online && st.Estado == "H") { entrar.Background = new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF7)); entrar.Foreground = new SolidColorBrush(Color.FromRgb(0x1C, 0x1C, 0x1E)); entrar.FontWeight = FontWeights.SemiBold; }
+            if (online && st.Estado == "H") { entrar.Background = (Brush)Win.FindResource("Ember"); entrar.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xF4, 0xE6)); entrar.FontWeight = FontWeights.SemiBold; }
             entrar.ToolTip = online ? "Configura o endereço dele e abre o jogo" : "Ele precisa estar com o launcher aberto";
             entrar.Click += (s, e) => EntrarNoHub(end);
             Grid.SetColumn(entrar, 3); g.Children.Add(entrar);
@@ -1672,7 +1681,8 @@ class Launcher
         Win.Loaded += async (s, e) => { await Task.Delay(8000); Enxugar(); };
         var linha = (Brush)Win.FindResource("Line");
         var estCard = (Style)Win.FindResource("Card"); var estRow = (Style)Win.FindResource("Row");
-        var estLbl = (Style)Win.FindResource("Lbl"); var estTit = (Style)Win.FindResource("CardTitle");
+        var estLbl = (Style)Win.FindResource("Lbl"); var estTit = (Style)Win.FindResource("CardTitle"); var estH1 = (Style)Win.FindResource("H1");
+        F<System.Windows.Shapes.Rectangle>("grain").Fill = Grao();
         foreach (var n in navs)
         {
             var pg = F<ScrollViewer>("pg" + n);
@@ -1691,6 +1701,14 @@ class Launcher
                         if (row && antes) { sp.Children.Insert(i, new System.Windows.Shapes.Rectangle { Height = 1, Fill = linha, Margin = new Thickness(0, 0, -18, 0), SnapsToDevicePixels = true }); i++; }
                         antes = row;
                     }
+                    Ornamentar(b);
+                }
+                // divisória de guilda (losango e traço) embaixo do título da página
+                var h1 = d as TextBlock;
+                if (h1 != null && h1.Style == estH1 && h1.Parent is StackPanel)
+                {
+                    var pai = (StackPanel)h1.Parent;
+                    pai.Children.Insert(pai.Children.IndexOf(h1) + 1, Divisoria());
                 }
                 // índice da busca: os nomes de cada ajuste e de cada grupo
                 var t = d as TextBlock;
@@ -1773,6 +1791,49 @@ class Launcher
         };
     }
 
+    // textura de couro: ruído quente bem leve, em ladrilho (uma imagem pequena, desenhada uma vez)
+    static ImageBrush Grao()
+    {
+        const int N = 160; var px = new byte[N * N * 4]; var r = new Random(7);
+        for (int k = 0; k < N * N; k++)
+        {
+            int a = r.Next(0, 26), v = r.Next(90, 255);
+            px[k * 4 + 0] = (byte)(v * 0.62 * a / 255); px[k * 4 + 1] = (byte)(v * 0.78 * a / 255); px[k * 4 + 2] = (byte)(v * 0.92 * a / 255); px[k * 4 + 3] = (byte)a;
+        }
+        var bmp = BitmapSource.Create(N, N, 96, 96, PixelFormats.Pbgra32, null, px, N * 4); bmp.Freeze();
+        return new ImageBrush(bmp) { TileMode = TileMode.Tile, Viewport = new Rect(0, 0, N, N), ViewportUnits = BrushMappingMode.Absolute, Stretch = Stretch.None };
+    }
+
+    // cantoneiras nos quatro cantos dos painéis, como as molduras dos menus do jogo
+    static readonly Geometry CANTO = Geometry.Parse("M0.5,12 V2.5 Q0.5,0.5 2.5,0.5 H12 M4,4 L5.5,4 L5.5,5.5 L4,5.5 Z");
+    void Ornamentar(Border b)
+    {
+        var conteudo = b.Child; b.Child = null;
+        var g = new Grid(); g.Children.Add(conteudo);
+        var pad = b.Padding;
+        var camada = new Grid { Margin = new Thickness(-pad.Left + 4, -pad.Top + 4, -pad.Right + 4, -pad.Bottom + 4), IsHitTestVisible = false };
+        var cor = new SolidColorBrush(Color.FromRgb(0x8A, 0x6E, 0x52)); cor.Freeze();
+        foreach (var canto in new[] { new[] { 0, 0 }, new[] { 1, 0 }, new[] { 0, 1 }, new[] { 1, 1 } })
+            camada.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = CANTO, Stroke = cor, StrokeThickness = 1.3, Width = 13, Height = 13,
+                HorizontalAlignment = canto[0] == 0 ? HorizontalAlignment.Left : HorizontalAlignment.Right,
+                VerticalAlignment = canto[1] == 0 ? VerticalAlignment.Top : VerticalAlignment.Bottom,
+                RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(canto[0] == 0 ? 1 : -1, canto[1] == 0 ? 1 : -1)
+            });
+        g.Children.Add(camada);
+        b.Child = g;
+    }
+
+    FrameworkElement Divisoria()
+    {
+        var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(3, 6, 0, 2), IsHitTestVisible = false };
+        sp.Children.Add(new System.Windows.Shapes.Rectangle { Width = 8, Height = 8, Fill = (Brush)Win.FindResource("Ember"), RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new RotateTransform(45), VerticalAlignment = VerticalAlignment.Center });
+        sp.Children.Add(new System.Windows.Shapes.Rectangle { Width = 46, Height = 2, Fill = (Brush)Win.FindResource("Ember"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) });
+        sp.Children.Add(new System.Windows.Shapes.Rectangle { Width = 160, Height = 1, VerticalAlignment = VerticalAlignment.Center, Fill = new LinearGradientBrush(Color.FromRgb(0x6E, 0x5A, 0x47), Color.FromArgb(0, 0x6E, 0x5A, 0x47), 0) });
+        return sp;
+    }
+
     void Maximizar()
     {
         if (Win.WindowState == WindowState.Maximized) { Win.WindowState = WindowState.Normal; return; }
@@ -1797,7 +1858,7 @@ class Launcher
                 var rb = F<RadioButton>("nav" + n);
                 if (c) { rb.ToolTip = nomesPagina[n]; rb.Content = ""; } else { rb.Content = nomesPagina[n]; rb.ToolTip = null; }
             }
-            F<Button>("btnPlay").Content = c ? "" : "Jogar";
+            F<Button>("btnPlay").Content = c ? "" : "Partir em missão";
         }
         double conteudo = w - (c ? 78 : 250) - 28 - 60;
         F<UniformGrid>("statsGrid").Columns = conteudo > 700 ? 4 : 2;
@@ -2000,6 +2061,7 @@ class Launcher
         if (!cenasLigadas) { trocando = false; return; }
         F<TextBlock>("txtScene").Text = "Em cena  ·  " + c.Nome;
         F<TextBlock>("miniTitle").Text = c.Nome;
+        F<TextBlock>("txtStars").Text = new string('★', 4 + (i * 7) % 3);
         F<ImageBrush>("miniThumb").ImageSource = c.Foto;
         Fundo(c);
         if (cenaPausada) PausarCena(false);
@@ -2016,7 +2078,7 @@ class Launcher
         var dots = F<StackPanel>("sceneDots"); dots.Children.Clear();
         for (int k = 0; k < cenas.Count; k++)
             dots.Children.Add(new Border { Width = k == i ? 18 : 6, Height = 6, CornerRadius = new CornerRadius(3), Margin = new Thickness(3, 0, 0, 0), Background = k == i ? (Brush)Win.FindResource("GoldHi") : new SolidColorBrush(Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF)) });
-        foreach (var o in cenas) if (o.Cartao != null) o.Cartao.BorderBrush = o == c ? (Brush)Win.FindResource("GoldHi") : Brushes.Transparent;
+        foreach (var o in cenas) if (o.Cartao != null) o.Cartao.BorderBrush = o == c ? (Brush)Win.FindResource("Ember") : Brushes.Transparent;
     }
 
     // cartões com foto de cada cena; as fotos saem dos vídeos e ficam em cache (%LOCALAPPDATA%\MHGU Launcher\cenas)
@@ -2031,20 +2093,32 @@ class Launcher
         {
             var c = cenas[i]; int idx = i;
             var img = new ImageBrush { Stretch = Stretch.UniformToFill };
-            var sombra = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 14, ShadowDepth = 4, Opacity = 0.45 };
-            var foto = new Border { Width = 232, Height = 130, CornerRadius = new CornerRadius(12), Background = img, BorderThickness = new Thickness(2), BorderBrush = Brushes.Transparent, Effect = sombra };
-            var zoom = new ScaleTransform(1, 1);
-            var card = new Border { Margin = new Thickness(0, 4, 18, 4), Cursor = Cursors.Hand, Background = Brushes.Transparent, RenderTransformOrigin = new Point(0.5, 0.4), RenderTransform = zoom };
+            var sombra = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 5, Opacity = 0.55, Direction = 280 };
+            var papel = new LinearGradientBrush(Color.FromRgb(0xEF, 0xE4, 0xCD), Color.FromRgb(0xDC, 0xCB, 0xAA), 90);
+            var foto = new Border { Width = 214, Height = 120, CornerRadius = new CornerRadius(1), Background = img, BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(Color.FromArgb(0x55, 0x2A, 0x1F, 0x16)) };
+            double angulo = new[] { -2.4, 1.6, -1.1, 2.2, -1.8, 1.2, -2.0, 1.8, -1.4, 2.4 }[i % 10];
+            var giro = new RotateTransform(angulo); var zoom = new ScaleTransform(1, 1);
+            var tg = new TransformGroup(); tg.Children.Add(zoom); tg.Children.Add(giro);
+            var card = new Border { Margin = new Thickness(6, 18, 20, 10), Cursor = Cursors.Hand, Background = papel, Padding = new Thickness(7, 7, 7, 9), CornerRadius = new CornerRadius(2), BorderThickness = new Thickness(2), BorderBrush = Brushes.Transparent, Effect = sombra, RenderTransformOrigin = new Point(0.5, 0.1), RenderTransform = tg };
+            var g = new Grid();
             var sp = new StackPanel();
             sp.Children.Add(foto);
-            sp.Children.Add(new TextBlock { Text = c.Nome, FontSize = 13.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 9, 2, 0) });
-            sp.Children.Add(new TextBlock { Text = "Cena " + (i + 1) + " · Monster Hunter GU", FontSize = 12, Foreground = (Brush)Win.FindResource("Sub"), Margin = new Thickness(2, 1, 2, 0) });
-            card.Child = sp;
-            card.MouseEnter += (s, e) => { Animar(zoom, ScaleTransform.ScaleXProperty, 1.035, 200); Animar(zoom, ScaleTransform.ScaleYProperty, 1.035, 200); Animar(sombra, System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, 26, 200); };
-            card.MouseLeave += (s, e) => { Animar(zoom, ScaleTransform.ScaleXProperty, 1, 240); Animar(zoom, ScaleTransform.ScaleYProperty, 1, 240); Animar(sombra, System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, 14, 240); };
+            sp.Children.Add(new TextBlock { Text = c.Nome, FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 14.5, FontWeight = FontWeights.Black, Foreground = (Brush)Win.FindResource("Ink"), Margin = new Thickness(2, 7, 2, 0) });
+            var linha = new TextBlock { FontSize = 12.5, Margin = new Thickness(2, 1, 2, 0), Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x55, 0x40)) };
+            linha.Inlines.Add(new System.Windows.Documents.Run(new string('★', 4 + (i * 7) % 3)) { Foreground = new SolidColorBrush(Color.FromRgb(0xB5, 0x38, 0x1F)) });
+            linha.Inlines.Add(new System.Windows.Documents.Run("   Cena " + (i + 1)));
+            sp.Children.Add(linha);
+            g.Children.Add(sp);
+            // tachinha
+            var pino = new System.Windows.Shapes.Ellipse { Width = 15, Height = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -16, 0, 0), Stroke = new SolidColorBrush(Color.FromRgb(0x6E, 0x1E, 0x10)), StrokeThickness = 1,
+                Fill = new RadialGradientBrush(Color.FromRgb(0xFF, 0x9A, 0x7A), Color.FromRgb(0xB5, 0x38, 0x1F)) { GradientOrigin = new Point(0.35, 0.3) } };
+            g.Children.Add(pino);
+            card.Child = g;
+            card.MouseEnter += (s, e) => { Animar(giro, RotateTransform.AngleProperty, 0, 220); Animar(zoom, ScaleTransform.ScaleXProperty, 1.05, 220); Animar(zoom, ScaleTransform.ScaleYProperty, 1.05, 220); Animar(sombra, System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, 22, 220); };
+            card.MouseLeave += (s, e) => { Animar(giro, RotateTransform.AngleProperty, angulo, 300); Animar(zoom, ScaleTransform.ScaleXProperty, 1, 300); Animar(zoom, ScaleTransform.ScaleYProperty, 1, 300); Animar(sombra, System.Windows.Media.Effects.DropShadowEffect.BlurRadiusProperty, 10, 300); };
             card.PreviewMouseLeftButtonDown += (s, e) => { Animar(zoom, ScaleTransform.ScaleXProperty, 0.97, 80); Animar(zoom, ScaleTransform.ScaleYProperty, 0.97, 80); };
-            card.MouseLeftButtonUp += (s, e) => { Animar(zoom, ScaleTransform.ScaleXProperty, 1.035, 160); Animar(zoom, ScaleTransform.ScaleYProperty, 1.035, 160); if (cenasLigadas) TocarCena(idx); };
-            c.Cartao = foto;
+            card.MouseLeftButtonUp += (s, e) => { Animar(zoom, ScaleTransform.ScaleXProperty, 1.05, 160); Animar(zoom, ScaleTransform.ScaleYProperty, 1.05, 160); if (cenasLigadas) TocarCena(idx); };
+            c.Cartao = card;
             lista.Children.Add(card);
 
             double t = c.Ini + (c.Fim - c.Ini) * 0.4;

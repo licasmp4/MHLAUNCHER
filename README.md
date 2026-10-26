@@ -179,7 +179,8 @@ O jogo base precisa ser o **`.xci`** (o `.nsp` do jogo base não é aceito) e o 
 - [ ] Barra de vida e números de dano feitos dentro do port
 - [ ] Qualidade de vida: coleta mais rápida, pular a espera do fim da missão e mais
 - [ ] Distância de visão maior
-- [x] Novo visual do launcher (vidro, cenas animadas, perfis Leve / Equilibrado / Ultra)
+- [x] Visual de guilda: quadro de missões, cartão de guilda, cenas animadas e perfis Leve / Equilibrado / Ultra
+- [x] Online de verdade: amigos online, Hub aberto, ping e aviso de versão
 
 ## 🛠️ Para desenvolvedores
 
@@ -201,7 +202,7 @@ Sai em `dist\`: `MHGU Launcher.exe` e `Instalar MHGU.exe`. Como publicar uma ver
 | [Lawrence-al](https://github.com/Lawrence-al) | Barra de vida e números de dano (plugins Forge) |
 | Fexty12573 | Forge |
 | SciresM | hactool |
-| [Rasmus Andersson](https://github.com/rsms/inter) | Fonte Inter (SIL Open Font License 1.1) |
+| [Natanael Gama](https://github.com/NDISCOVER/Cinzel-Typeface) e [Huerta Tipográfica](https://www.huertatipografica.com/) | Fontes Cinzel e Alegreya Sans (SIL Open Font License 1.1) |
 
 <div align="center">
 <sub>Monster Hunter Generations Ultimate © CAPCOM. Projeto de fãs, sem fins lucrativos e sem ligação com a CAPCOM.<br>
