@@ -80,6 +80,20 @@ class App
     }
 }
 
+// curva "mola" (a mesma do Clawdeck: cubic-bezier(0.23,1,0.32,1)): sai rápido e assenta macio, sem quique de brinquedo
+class Mola : System.Windows.Media.Animation.EasingFunctionBase
+{
+    public Mola() { EasingMode = System.Windows.Media.Animation.EasingMode.EaseIn; }  // ("In" = a curva como está, igual ao CSS)
+    protected override Freezable CreateInstanceCore() { return new Mola(); }
+    static double B(double t, double a, double b) { double u = 1 - t; return 3 * u * u * t * a + 3 * u * t * t * b + t * t * t; }
+    protected override double EaseInCore(double x)
+    {
+        double lo = 0, hi = 1, t = x;
+        for (int k = 0; k < 20; k++) { t = (lo + hi) / 2; if (B(t, 0.23, 0.32) < x) lo = t; else hi = t; }
+        return B(t, 1, 1);
+    }
+}
+
 class Launcher
 {
     // versão deste launcher: o Release no GitHub deve ter a tag "v" + uma versão maior para oferecer atualização
@@ -161,7 +175,7 @@ class Launcher
             Win.Loaded += (s, e) => Animar(Win, UIElement.OpacityProperty, 1, 280);
         }
 
-        Video(); Perf(); Perfis(); Ctrl(); Online(); Hunt(); Mods(); About(); Cacadores(); Versao(); HudDiag(); AutoUpdate(args); Cenas(); Visual(navs); Presenca();
+        Video(); Perf(); Perfis(); Ctrl(); Online(); Hunt(); Mods(); About(); Cacadores(); Versao(); HudDiag(); AutoUpdate(args); Cenas(); Visual(navs); Presenca(); Layouts(); Charme(navs); Paginas();
         carregando = false;
         Resumo();
 
@@ -261,10 +275,11 @@ class Launcher
     }
 
     // animação curta com desaceleração (visual do launcher)
+    static readonly Mola MOLA = Congelar(new Mola());
+    static Mola Congelar(Mola m) { m.Freeze(); return m; }
     static void Animar(System.Windows.Media.Animation.IAnimatable alvo, DependencyProperty p, double para, int ms, double? de = null)
     {
-        var a = new System.Windows.Media.Animation.DoubleAnimation(para, TimeSpan.FromMilliseconds(ms))
-        { EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } };
+        var a = new System.Windows.Media.Animation.DoubleAnimation(para, TimeSpan.FromMilliseconds(ms)) { EasingFunction = MOLA };
         if (de.HasValue) a.From = de.Value;
         alvo.BeginAnimation(p, a);
     }
@@ -276,7 +291,7 @@ class Launcher
         var sv = pg as ScrollViewer; var sp = sv != null ? sv.Content as Panel : null;
         if (sp == null) return;
         sv.ScrollToVerticalOffset(0);
-        var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+        var ease = MOLA;
         int i = 0;
         foreach (UIElement c in sp.Children)
         {
@@ -822,7 +837,8 @@ class Launcher
     {
         var p = F<StackPanel>("modsPanel"); p.Children.Clear();
         var lista = new List<Tuple<string, bool>>();
-        if (Directory.Exists(ModsOn)) foreach (var d in Directory.GetDirectories(ModsOn)) lista.Add(Tuple.Create(d, true));
+        // (os pacotes de botões e as pastas desligadas com "_" se controlam em Controles, não aqui)
+        if (Directory.Exists(ModsOn)) foreach (var d in Directory.GetDirectories(ModsOn)) if (!Path.GetFileName(d).StartsWith("_") && !Path.GetFileName(d).Contains("~Botoes")) lista.Add(Tuple.Create(d, true));
         if (Directory.Exists(ModsOff)) foreach (var d in Directory.GetDirectories(ModsOff)) lista.Add(Tuple.Create(d, false));
         foreach (var m in lista.OrderBy(x => Path.GetFileName(x.Item1)))
         {
@@ -1320,6 +1336,492 @@ class Launcher
         finally { selfAtualizando = false; b1.IsEnabled = b2.IsEnabled = true; }
     }
 
+    // ---------- charme (ideias do Clawdeck): seleção que desliza, ícones vivos, reflexo de luz, rolagem discreta,
+    // um monstro por aba com movimento próprio e parallax
+    void Charme(string[] navs)
+    {
+        Win.Loaded += (s, e) =>
+        {
+            RolagemDiscreta();
+            SelecaoDeslizante(navs);
+            IconesVivos(navs);
+            Reflexo();
+            var _ = Banners();
+        };
+    }
+
+    // a barra de rolagem só aparece enquanto rola (e quando o mouse chega perto da borda)
+    void RolagemDiscreta()
+    {
+        foreach (var sv in Arvore(Win).OfType<ScrollViewer>().ToList())
+        {
+            sv.ApplyTemplate();
+            var barra = sv.Template.FindName("PART_VerticalScrollBar", sv) as System.Windows.Controls.Primitives.ScrollBar;
+            if (barra == null) continue;
+            var esconde = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+            esconde.Tick += (s, e) => { esconde.Stop(); if (!barra.IsMouseOver) Animar(barra, UIElement.OpacityProperty, 0, 450); };
+            Action mostra = () => { Animar(barra, UIElement.OpacityProperty, 1, 140); esconde.Stop(); esconde.Start(); };
+            sv.ScrollChanged += (s, e) => { if (e.VerticalChange != 0) mostra(); };
+            sv.MouseMove += (s, e) => { if (e.GetPosition(sv).X > sv.ActualWidth - 24 && sv.ScrollableHeight > 0) mostra(); };
+        }
+    }
+
+    // um destaque só, que corre até a aba escolhida (em vez de cada aba acender sozinha)
+    Border marca; Grid trilhoNav;
+    void SelecaoDeslizante(string[] navs)
+    {
+        var rol = F<ScrollViewer>("navScroll"); var sp = rol.Content as StackPanel; if (sp == null) return;
+        rol.Content = null;
+        trilhoNav = new Grid();
+        var fundo = new LinearGradientBrush(Color.FromArgb(0x4D, 0xE0, 0x59, 0x3A), Color.FromArgb(0x0D, 0xE0, 0x59, 0x3A), 0);
+        var g = new Grid();
+        g.Children.Add(new Border { Width = 3, Height = 18, CornerRadius = new CornerRadius(2), Background = (Brush)Win.FindResource("Ember"), HorizontalAlignment = HorizontalAlignment.Left });
+        marca = new Border { Height = 36, Margin = new Thickness(10, 0, 10, 0), VerticalAlignment = VerticalAlignment.Top, CornerRadius = new CornerRadius(6), Background = fundo,
+                             BorderBrush = new SolidColorBrush(Color.FromArgb(0x59, 0xE0, 0x59, 0x3A)), BorderThickness = new Thickness(1), Child = g, RenderTransform = new TranslateTransform(), IsHitTestVisible = false };
+        trilhoNav.Children.Add(marca); trilhoNav.Children.Add(sp);
+        rol.Content = trilhoNav;
+        foreach (var n in navs)
+        {
+            var rb = F<RadioButton>("nav" + n);
+            rb.ApplyTemplate();
+            foreach (var parte in new[] { "b", "bar" }) { var x = rb.Template.FindName(parte, rb) as UIElement; if (x != null) x.Visibility = Visibility.Collapsed; }
+            rb.Checked += (s, e) => MoverMarca(true);
+        }
+        trilhoNav.SizeChanged += (s, e) => MoverMarca(false);
+        Win.Dispatcher.BeginInvoke(new Action(() => MoverMarca(false)), DispatcherPriority.Loaded);
+    }
+
+    void MoverMarca(bool animar)
+    {
+        if (marca == null || paginas == null) return;
+        var rb = paginas.Select(n => F<RadioButton>("nav" + n)).FirstOrDefault(r => r.IsChecked == true); if (rb == null || rb.ActualHeight == 0) return;
+        double y = rb.TranslatePoint(new Point(0, 0), trilhoNav).Y + 1, h = rb.ActualHeight - 2;
+        var tt = (TranslateTransform)marca.RenderTransform;
+        if (!animar) { tt.BeginAnimation(TranslateTransform.YProperty, null); tt.Y = y; marca.Height = h; return; }
+        Animar(tt, TranslateTransform.YProperty, y, 380);
+        // um esticadinho no caminho, como no Clawdeck
+        var estica = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+        estica.KeyFrames.Add(new System.Windows.Media.Animation.LinearDoubleKeyFrame(h + 6, System.Windows.Media.Animation.KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(120))));
+        estica.KeyFrames.Add(new System.Windows.Media.Animation.EasingDoubleKeyFrame(h, System.Windows.Media.Animation.KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(380)), MOLA));
+        marca.BeginAnimation(FrameworkElement.HeightProperty, estica);
+    }
+
+    // cada ícone do menu tem o seu jeito de se mexer (ao passar o mouse e ao escolher a aba)
+    void IconesVivos(string[] navs)
+    {
+        foreach (var n in navs)
+        {
+            var rb = F<RadioButton>("nav" + n); rb.ApplyTemplate();
+            var ic = rb.Template.FindName("ic", rb) as System.Windows.Shapes.Path; if (ic == null) continue;
+            var esc = new ScaleTransform(); var rot = new RotateTransform(); var mv = new TranslateTransform();
+            var tg = new TransformGroup(); tg.Children.Add(esc); tg.Children.Add(rot); tg.Children.Add(mv);
+            ic.RenderTransform = tg; ic.RenderTransformOrigin = n == "Hunt" ? new Point(0.2, 0.85) : new Point(0.5, 0.5);
+            string nome = n;
+            Action vive = () => Gesto(nome, esc, rot, mv);
+            rb.MouseEnter += (s, e) => vive();
+            rb.Checked += (s, e) => vive();
+        }
+    }
+
+    static System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames Chaves(params double[] vt)
+    {
+        // pares (valor, ms) com a curva mola em cada trecho
+        var a = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+        for (int i = 0; i + 1 < vt.Length; i += 2)
+            a.KeyFrames.Add(new System.Windows.Media.Animation.EasingDoubleKeyFrame(vt[i], System.Windows.Media.Animation.KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(vt[i + 1])), MOLA));
+        return a;
+    }
+
+    void Gesto(string n, ScaleTransform esc, RotateTransform rot, TranslateTransform mv)
+    {
+        switch (n)
+        {
+            case "Home": esc.BeginAnimation(ScaleTransform.ScaleXProperty, Chaves(1.22, 140, 1, 420)); esc.BeginAnimation(ScaleTransform.ScaleYProperty, Chaves(1.22, 140, 1, 420)); break;   // brasão pulsa
+            case "Online": rot.BeginAnimation(RotateTransform.AngleProperty, Chaves(-10, 110, 8, 230, -4, 340, 0, 460)); break;                                                          // estandarte tremula
+            case "Hunt": rot.BeginAnimation(RotateTransform.AngleProperty, Chaves(-38, 130, 14, 260, 0, 480)); break;                                                                   // espada dá o golpe
+            case "Video": esc.BeginAnimation(ScaleTransform.ScaleYProperty, Chaves(0.1, 90, 1, 230)); break;                                                                             // olho pisca
+            case "Perf": rot.BeginAnimation(RotateTransform.AngleProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 180, TimeSpan.FromMilliseconds(520)) { EasingFunction = MOLA }); break; // ampulheta vira
+            case "Ctrl": mv.BeginAnimation(TranslateTransform.XProperty, Chaves(-2.5, 60, 2.5, 130, -2, 200, 1.5, 270, 0, 340)); break;                                             // controle vibra
+            case "Mods": mv.BeginAnimation(TranslateTransform.YProperty, Chaves(-5, 150, 0, 330)); esc.BeginAnimation(ScaleTransform.ScaleYProperty, Chaves(1.08, 150, 0.9, 330, 1, 470)); break; // bolsa pula
+            default: rot.BeginAnimation(RotateTransform.AngleProperty, Chaves(-12, 140, 9, 280, 0, 460)); break;                                                                        // pergaminho balança
+        }
+    }
+
+    // uma faixa de luz atravessa o botão "Partir em missão" de tempos em tempos (e ao passar o mouse)
+    void Reflexo()
+    {
+        var bt = F<Button>("btnPlay"); bt.ApplyTemplate();
+        var b = bt.Template.FindName("b", bt) as Border; if (b == null || !(b.Child is UIElement)) return;
+        var conteudo = b.Child; b.Child = null;
+        var g = new Grid { ClipToBounds = true };
+        var mv = new TranslateTransform(-120, 0);
+        var luz = new System.Windows.Shapes.Rectangle
+        {
+            Width = 70, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, -20, 0, -20), IsHitTestVisible = false,
+            Fill = new LinearGradientBrush(new GradientStopCollection { new GradientStop(Color.FromArgb(0, 255, 240, 220), 0), new GradientStop(Color.FromArgb(0x66, 255, 240, 220), 0.5), new GradientStop(Color.FromArgb(0, 255, 240, 220), 1) }, 0),
+            RenderTransform = new TransformGroup { Children = { new SkewTransform(-20, 0), mv } }
+        };
+        g.Children.Add(conteudo); g.Children.Add(luz);
+        b.Child = g;
+        Action passa = () => mv.BeginAnimation(TranslateTransform.XProperty, new System.Windows.Media.Animation.DoubleAnimation(-120, bt.ActualWidth + 60, TimeSpan.FromMilliseconds(850)) { EasingFunction = new System.Windows.Media.Animation.SineEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } });
+        bt.MouseEnter += (s, e) => passa();
+        var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(7) };
+        t.Tick += (s, e) => { if (Win.IsVisible && Win.WindowState != WindowState.Minimized) passa(); t.Interval = TimeSpan.FromSeconds(6 + rnd.Next(5)); };
+        t.Start();
+    }
+
+    // um monstro por aba: faixa no topo com uma cena do jogo, cada uma com um movimento, e que acompanha o mouse
+    class Banner { public string Pagina; public int Video; public double T; public string Mov; }
+    static readonly Banner[] BANNERS =
+    {
+        new Banner { Pagina = "Online", Video = 8, T = 78,  Mov = "pan" },     // festa no Hub (jogar junto)
+        new Banner { Pagina = "Hunt",   Video = 2, T = 36,  Mov = "zoom" },    // Glavenus e a cauda em brasa
+        new Banner { Pagina = "Video",  Video = 4, T = 27,  Mov = "olho" },    // Mizutsune e as bolhas
+        new Banner { Pagina = "Perf",   Video = 6, T = 35,  Mov = "corre" },   // caçador no relâmpago
+        new Banner { Pagina = "Ctrl",   Video = 3, T = 27,  Mov = "flutua" },  // selva dourada
+        new Banner { Pagina = "Mods",   Video = 1, T = 21,  Mov = "respira" }, // Felynes no dirigível
+        new Banner { Pagina = "About",  Video = 9, T = 169, Mov = "sobe" },    // nova aventura
+    };
+
+    async Task Banners()
+    {
+        if (!cenas.All(c => File.Exists(VideoArq(c.Video)))) return;
+        string cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MHGU Launcher", "cenas");
+        Directory.CreateDirectory(cache);
+        var estH1 = (Style)Win.FindResource("H1");
+        foreach (var bn in BANNERS)
+        {
+            var pg = F<ScrollViewer>("pg" + bn.Pagina); var sp = pg.Content as StackPanel; if (sp == null) continue;
+            string png = Path.Combine(cache, "banner_movie" + bn.Video.ToString("00") + "_" + (int)bn.T + ".png");
+            BitmapSource bmp = null;
+            if (File.Exists(png)) { try { bmp = BitmapFrame.Create(new Uri(png), BitmapCreateOptions.None, BitmapCacheOption.OnLoad); } catch { } }
+            if (bmp == null)
+            {
+                bmp = await Foto(VideoArq(bn.Video), bn.T, 960, 540);
+                if (bmp == null) continue;
+                try { var enc = new PngBitmapEncoder(); enc.Frames.Add(BitmapFrame.Create(bmp)); using (var fs = File.Create(png)) enc.Save(fs); } catch { }
+            }
+            var esc = new ScaleTransform(1.18, 1.18); var mv = new TranslateTransform(); var par = new TranslateTransform(); var rot = new RotateTransform();
+            var img = new Image { Source = bmp, Stretch = Stretch.UniformToFill, RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new TransformGroup { Children = { esc, rot, mv, par } } };
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            var faixa = new Grid { Height = 220, ClipToBounds = true, Margin = new Thickness(0, 0, 0, -92), IsHitTestVisible = false };
+            faixa.Children.Add(img);
+            faixa.Children.Add(new System.Windows.Shapes.Rectangle { Fill = new LinearGradientBrush(new GradientStopCollection {
+                new GradientStop(Color.FromArgb(0x00, 0x15, 0x11, 0x0E), 0), new GradientStop(Color.FromArgb(0x33, 0x15, 0x11, 0x0E), 0.5), new GradientStop(Color.FromArgb(0xFF, 0x15, 0x11, 0x0E), 1) }, 90) });
+            faixa.Children.Add(new System.Windows.Shapes.Rectangle { Fill = new LinearGradientBrush(Color.FromArgb(0x8C, 0x15, 0x11, 0x0E), Color.FromArgb(0x00, 0x15, 0x11, 0x0E), 0) });
+            var borda = new Border { CornerRadius = new CornerRadius(10), Child = faixa, Opacity = 0, BorderBrush = (Brush)Win.FindResource("Rim"), BorderThickness = new Thickness(1, 1, 1, 0) };
+            faixa.Clip = null;
+            sp.Children.Insert(0, borda);
+            Animar(borda, UIElement.OpacityProperty, 1, 700);
+            // o título passa por cima da faixa
+            var h1 = sp.Children.OfType<TextBlock>().FirstOrDefault(t => t.Style == estH1);
+            if (h1 != null) Panel.SetZIndex(h1, 2);
+            // movimento próprio de cada aba (vai e volta para sempre, bem devagar)
+            Func<double, double, double, System.Windows.Media.Animation.DoubleAnimation> vai = (de, para, seg) =>
+                new System.Windows.Media.Animation.DoubleAnimation(de, para, TimeSpan.FromSeconds(seg)) { AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever, EasingFunction = new System.Windows.Media.Animation.SineEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut } };
+            switch (bn.Mov)
+            {
+                case "pan": mv.BeginAnimation(TranslateTransform.XProperty, vai(-40, 40, 16)); break;
+                case "zoom": esc.BeginAnimation(ScaleTransform.ScaleXProperty, vai(1.14, 1.32, 18)); esc.BeginAnimation(ScaleTransform.ScaleYProperty, vai(1.14, 1.32, 18)); break;
+                case "olho": esc.BeginAnimation(ScaleTransform.ScaleXProperty, vai(1.36, 1.18, 14)); esc.BeginAnimation(ScaleTransform.ScaleYProperty, vai(1.36, 1.18, 14)); rot.BeginAnimation(RotateTransform.AngleProperty, vai(-1.5, 1.5, 14)); break;
+                case "corre": mv.BeginAnimation(TranslateTransform.XProperty, vai(40, -40, 11)); mv.BeginAnimation(TranslateTransform.YProperty, vai(-8, 8, 7)); break;
+                case "flutua": mv.BeginAnimation(TranslateTransform.YProperty, vai(-14, 14, 8)); break;
+                case "respira": esc.BeginAnimation(ScaleTransform.ScaleXProperty, vai(1.16, 1.24, 6)); esc.BeginAnimation(ScaleTransform.ScaleYProperty, vai(1.16, 1.24, 6)); break;
+                default: mv.BeginAnimation(TranslateTransform.YProperty, vai(18, -18, 20)); break;
+            }
+            // parallax: a cena se afasta um pouco do mouse
+            pg.MouseMove += (s, e) =>
+            {
+                var p = e.GetPosition(pg);
+                Animar(par, TranslateTransform.XProperty, (p.X / Math.Max(1, pg.ActualWidth) - 0.5) * -22, 600);
+                Animar(par, TranslateTransform.YProperty, (p.Y / Math.Max(1, pg.ActualHeight) - 0.5) * -10, 600);
+            };
+        }
+    }
+
+    // ---------- páginas com conteúdo visual: prévia do HUD (Caçada), prévia de qualidade (Gráficos),
+    // controle desenhado (Controles). As cenas saem dos vídeos da cópia do jogador.
+    async Task<BitmapSource> Quadro(int video, double t)
+    {
+        string cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MHGU Launcher", "cenas");
+        Directory.CreateDirectory(cache);
+        string png = Path.Combine(cache, "quadro_movie" + video.ToString("00") + "_" + (int)t + ".png");
+        if (File.Exists(png)) { try { return BitmapFrame.Create(new Uri(png), BitmapCreateOptions.None, BitmapCacheOption.OnLoad); } catch { } }
+        if (!File.Exists(VideoArq(video))) return null;
+        var bmp = await Foto(VideoArq(video), t, 960, 540);
+        if (bmp != null) { try { var enc = new PngBitmapEncoder(); enc.Frames.Add(BitmapFrame.Create(bmp)); using (var fs = File.Create(png)) enc.Save(fs); } catch { } }
+        return bmp;
+    }
+
+    static void InserirDepoisDoSub(StackPanel sp, UIElement el, Style sub)
+    {
+        int i = sp.Children.Cast<UIElement>().ToList().FindIndex(c => c is TextBlock && ((TextBlock)c).Style == sub);
+        sp.Children.Insert(i >= 0 ? i + 1 : 0, el);
+    }
+
+    Border Moldura(double altura)
+    {
+        return new Border { Height = altura, CornerRadius = new CornerRadius(10), BorderBrush = (Brush)Win.FindResource("Rim"), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 18), ClipToBounds = true, Background = (Brush)Win.FindResource("CardBg") };
+    }
+
+    static Border Pilula(string texto)
+    {
+        return new Border { HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(16, 14, 0, 0), CornerRadius = new CornerRadius(4), Padding = new Thickness(9, 3, 9, 4),
+                            Background = new SolidColorBrush(Color.FromArgb(0xB3, 0x15, 0x11, 0x0E)), BorderBrush = new SolidColorBrush(Color.FromArgb(0x80, 0x6E, 0x5A, 0x47)), BorderThickness = new Thickness(1),
+                            Child = new TextBlock { Text = texto, FontSize = 12.5, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0xE9, 0xDD, 0xC5)) } };
+    }
+
+    void Paginas()
+    {
+        Win.Loaded += async (s, e) =>
+        {
+            try { await PreviaHud(); } catch { }
+            try { await PreviaQualidade(); } catch { }
+            try { ControleDesenhado(); } catch { }
+        };
+    }
+
+    // Caçada: a barra de vida e os números de dano, como aparecem no jogo, por cima de uma cena
+    async Task PreviaHud()
+    {
+        var foto = await Quadro(2, 24);
+        var caixa = Moldura(300);
+        var g = new Grid();
+        if (foto != null) g.Children.Add(new Image { Source = foto, Stretch = Stretch.UniformToFill });
+        g.Children.Add(new System.Windows.Shapes.Rectangle { Fill = new RadialGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(0x99, 0, 0, 0)) { RadiusX = 0.8, RadiusY = 0.9 } });
+        g.Children.Add(Pilula("Prévia do HUD de caça"));
+        // barra de vida (cores e formato do plugin)
+        var vida = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 18, 22, 0), Width = 300 };
+        var contorno = new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.Black, BlurRadius = 3, ShadowDepth = 0, Opacity = 1 };
+        vida.Children.Add(new TextBlock { Text = "Glavenus   ♛ coroa de ouro   · raivoso", FontSize = 13.5, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Effect = contorno, Margin = new Thickness(0, 0, 0, 4) });
+        var trilho = new Border { Height = 18, CornerRadius = new CornerRadius(4), Background = new SolidColorBrush(Color.FromArgb(0xBE, 0x0F, 0x14, 0x19)), BorderBrush = new SolidColorBrush(Color.FromArgb(0xE6, 0xE6, 0xE6, 0xE6)), BorderThickness = new Thickness(1) };
+        var cheio = new Border { HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3), Background = new SolidColorBrush(Color.FromArgb(0xEB, 0x50, 0xDC, 0x6E)), Width = 298 };
+        trilho.Child = cheio; vida.Children.Add(trilho);
+        var numeros = new TextBlock { FontSize = 13, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Effect = contorno, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
+        vida.Children.Add(numeros);
+        g.Children.Add(vida);
+        var tela = new Canvas { IsHitTestVisible = false, ClipToBounds = true };
+        g.Children.Add(tela);
+        caixa.Child = g;
+        InserirDepoisDoSub((StackPanel)F<ScrollViewer>("pgHunt").Content, caixa, (Style)Win.FindResource("H1Sub"));
+
+        const int MAX = 29800; int hp = MAX;
+        Action pinta = () =>
+        {
+            double f = hp / (double)MAX;
+            Animar(cheio, FrameworkElement.WidthProperty, 298 * f, 380);
+            cheio.Background = new SolidColorBrush(f <= 0.25 ? Color.FromArgb(0xEB, 0xFF, 0x5A, 0x46) : Color.FromArgb(0xEB, 0x50, 0xDC, 0x6E));
+            numeros.Text = hp.ToString("N0", new CultureInfo("pt-BR")) + " / " + MAX.ToString("N0", new CultureInfo("pt-BR")) + "   (" + (int)Math.Round(f * 100) + "%)";
+        };
+        pinta();
+        Action liga = () => vida.Visibility = F<CheckBox>("tgHpBar").IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        F<CheckBox>("tgHpBar").Checked += (s, e) => liga(); F<CheckBox>("tgHpBar").Unchecked += (s, e) => liga(); liga();
+
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(620) };
+        t.Tick += (s, e) =>
+        {
+            if (F<FrameworkElement>("pgHunt").Visibility != Visibility.Visible || !Win.IsVisible || tela.ActualWidth == 0) return;
+            if (F<CheckBox>("tgDmg").IsChecked != true) return;
+            bool forte = rnd.NextDouble() < 0.4;
+            int dano = forte ? 90 + rnd.Next(110) : 25 + rnd.Next(60);
+            hp -= dano; if (hp < MAX * 0.08) hp = MAX;
+            pinta();
+            // número do golpe: sobe, aparece com um "pop" e some (amarelo = ponto fraco, como no plugin)
+            var tb = new TextBlock { Text = dano.ToString(), FontSize = forte ? 30 : 25, FontWeight = FontWeights.Black, Effect = contorno,
+                                     Foreground = new SolidColorBrush(forte ? Color.FromRgb(0xFF, 0xDC, 0x50) : Colors.White), RenderTransformOrigin = new Point(0.5, 0.5) };
+            double x = tela.ActualWidth * (0.3 + rnd.NextDouble() * 0.36), y = tela.ActualHeight * (0.38 + rnd.NextDouble() * 0.3);
+            Canvas.SetLeft(tb, x); Canvas.SetTop(tb, y);
+            var sobe = new TranslateTransform(); var pop = new ScaleTransform(1.35, 1.35);
+            tb.RenderTransform = new TransformGroup { Children = { pop, sobe } };
+            tela.Children.Add(tb);
+            sobe.BeginAnimation(TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(0, -42, TimeSpan.FromMilliseconds(1400)) { EasingFunction = MOLA });
+            pop.BeginAnimation(ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(1.35, 1, TimeSpan.FromMilliseconds(180)));
+            pop.BeginAnimation(ScaleTransform.ScaleYProperty, new System.Windows.Media.Animation.DoubleAnimation(1.35, 1, TimeSpan.FromMilliseconds(180)));
+            var some = new System.Windows.Media.Animation.DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(300)) { BeginTime = TimeSpan.FromMilliseconds(1100) };
+            some.Completed += (a, b) => tela.Children.Remove(tb);
+            tb.BeginAnimation(UIElement.OpacityProperty, some);
+        };
+        t.Start();
+    }
+
+    // Gráficos: a mesma cena em cada qualidade, com um contador de FPS vivo (passe o mouse num perfil para ver)
+    BitmapSource[] qualidades; Image previaImg; TextBlock previaTxt, previaFps; int previaAlvoFps = 60; StackPanel previaBarras;
+    async Task PreviaQualidade()
+    {
+        var foto = await Quadro(7, 19);
+        if (foto == null) return;
+        Func<double, BitmapSource> reduz = f => { var r = new TransformedBitmap(foto, new ScaleTransform(f, f)); r.Freeze(); return r; };
+        qualidades = new[] { reduz(0.22), reduz(0.55), foto };
+        var caixa = Moldura(250);
+        var g = new Grid();
+        previaImg = new Image { Stretch = Stretch.UniformToFill, Source = foto };
+        RenderOptions.SetBitmapScalingMode(previaImg, BitmapScalingMode.Linear);
+        g.Children.Add(previaImg);
+        g.Children.Add(new System.Windows.Shapes.Rectangle { Fill = new LinearGradientBrush(Color.FromArgb(0, 0, 0, 0), Color.FromArgb(0xB3, 0x0B, 0x09, 0x07), 90) });
+        g.Children.Add(Pilula("Prévia de qualidade"));
+        previaTxt = new TextBlock { FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 20, FontWeight = FontWeights.Black, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(18, 0, 0, 16) };
+        g.Children.Add(previaTxt);
+        var fps = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 18, 14) };
+        previaBarras = new StackPanel { Orientation = Orientation.Horizontal, Height = 26, HorizontalAlignment = HorizontalAlignment.Right };
+        for (int i = 0; i < 28; i++) previaBarras.Children.Add(new Border { Width = 3, Margin = new Thickness(1, 0, 1, 0), VerticalAlignment = VerticalAlignment.Bottom, CornerRadius = new CornerRadius(1), Background = new SolidColorBrush(Color.FromArgb(0xCC, 0x5F, 0xBF, 0xA0)), Height = 10 });
+        previaFps = new TextBlock { FontFamily = (FontFamily)Win.FindResource("Display"), FontSize = 26, FontWeight = FontWeights.Black, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Right };
+        fps.Children.Add(previaFps); fps.Children.Add(previaBarras);
+        g.Children.Add(fps);
+        caixa.Child = g;
+        var sp = (StackPanel)F<ScrollViewer>("pgVideo").Content;
+        sp.Children.Insert(sp.Children.IndexOf(F<TextBlock>("txtPerfil")) + 1, caixa);
+        foreach (var p in perfis) { var pf = p; var rb = F<RadioButton>("pf" + p.Nome); rb.MouseEnter += (s, e) => MostrarQualidade(pf.Nome); rb.MouseLeave += (s, e) => MostrarQualidade(null); }
+        MostrarQualidade(null);
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(160) };
+        t.Tick += (s, e) =>
+        {
+            if (F<FrameworkElement>("pgVideo").Visibility != Visibility.Visible || !Win.IsVisible) return;
+            previaFps.Text = Math.Max(1, (int)(previaAlvoFps * (0.97 + rnd.NextDouble() * 0.04))) + " FPS";
+            // as barrinhas correm da direita para a esquerda (tempo de cada quadro)
+            var b = (Border)previaBarras.Children[0]; previaBarras.Children.RemoveAt(0);
+            b.Height = 8 + rnd.NextDouble() * 6 + (previaAlvoFps >= 120 ? 10 : previaAlvoFps >= 60 ? 5 : 0);
+            previaBarras.Children.Add(b);
+        };
+        t.Start();
+    }
+
+    void MostrarQualidade(string perfil)
+    {
+        if (qualidades == null) return;
+        string render = ini.Get("Display", "RenderResolution", "Auto"); int fps; int.TryParse(ini.Get("Performance", "FPS", "60"), out fps);
+        int nivel; string nome;
+        var p = perfil != null ? perfis.First(x => x.Nome == perfil) : null;
+        if (p != null) { nivel = p.Nome == "Leve" ? 0 : p.Nome == "Equilibrado" ? 1 : 2; nome = p.Nome; fps = p.Fps; render = p.Render; }
+        else { nivel = render == "1280x720" ? 0 : render == "Auto" || render == "1920x1080" ? 1 : 2; nome = perfilNome ?? "Personalizado"; }
+        previaImg.Source = qualidades[nivel];
+        previaAlvoFps = Math.Max(30, fps);
+        var nomes = new Dictionary<string, string> { { "1280x720", "720p" }, { "Auto", "resolução da tela" }, { "1920x1080", "1080p" }, { "2560x1440", "1440p" }, { "3840x2160", "4K" } };
+        string r; previaTxt.Text = nome + "  ·  " + (nomes.TryGetValue(render, out r) ? r : render);
+        previaImg.Opacity = 0.6; Animar(previaImg, UIElement.OpacityProperty, 1, 260);
+    }
+
+    // Controles: um controle desenhado com os botões do layout escolhido; os botões de ação acendem em sequência
+    Canvas controleCv; readonly List<Tuple<Grid, int>> botoesFace = new List<Tuple<Grid, int>>(); TextBlock controleLegenda;
+    void ControleDesenhado()
+    {
+        var caixa = Moldura(270);
+        var g = new Grid();
+        g.Children.Add(Pilula("Seu controle no jogo"));
+        controleCv = new Canvas { Width = 400, Height = 220 };
+        g.Children.Add(new Viewbox { Child = controleCv, Margin = new Thickness(20, 34, 20, 34) });
+        controleLegenda = new TextBlock { FontSize = 13.5, FontWeight = FontWeights.Medium, Foreground = (Brush)Win.FindResource("Sub"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 12) };
+        g.Children.Add(controleLegenda);
+        caixa.Child = g;
+        var sp = (StackPanel)F<ScrollViewer>("pgCtrl").Content;
+        sp.Children.Insert(sp.Children.IndexOf(F<TextBlock>("txtLayout")) + 1, caixa);
+        DesenharControle();
+        foreach (var n in new[] { "layPS", "layXbox", "layNin" }) F<RadioButton>(n).Checked += (s, e) => DesenharControle();
+        int vez = 0;
+        var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(520) };
+        t.Tick += (s, e) =>
+        {
+            if (F<FrameworkElement>("pgCtrl").Visibility != Visibility.Visible || botoesFace.Count == 0) return;
+            var b = botoesFace[vez++ % botoesFace.Count].Item1;
+            var esc = (ScaleTransform)b.RenderTransform;
+            esc.BeginAnimation(ScaleTransform.ScaleXProperty, Chaves(1.28, 120, 1, 420)); esc.BeginAnimation(ScaleTransform.ScaleYProperty, Chaves(1.28, 120, 1, 420));
+        };
+        t.Start();
+    }
+
+    void DesenharControle()
+    {
+        if (controleCv == null) return;
+        string lay = F<RadioButton>("layXbox").IsChecked == true ? "Xbox" : F<RadioButton>("layNin").IsChecked == true ? "Nintendo" : "PS";
+        controleCv.Children.Clear(); botoesFace.Clear();
+        var couro = new LinearGradientBrush(Color.FromRgb(0x3A, 0x31, 0x2A), Color.FromRgb(0x1E, 0x19, 0x15), 90);
+        var aro = new SolidColorBrush(Color.FromRgb(0x8A, 0x6E, 0x52));
+        Action<UIElement, double, double> por = (el, x, y) => { Canvas.SetLeft(el, x); Canvas.SetTop(el, y); controleCv.Children.Add(el); };
+        // gatilhos e corpo
+        foreach (var q in new[] { new { X = 62.0, T = lay == "PS" ? "L1" : lay == "Xbox" ? "LB" : "L" }, new { X = 278.0, T = lay == "PS" ? "R1" : lay == "Xbox" ? "RB" : "R" } })
+        {
+            var gat = new Border { Width = 60, Height = 20, CornerRadius = new CornerRadius(8, 8, 3, 3), Background = couro, BorderBrush = aro, BorderThickness = new Thickness(1.5), Child = new TextBlock { Text = q.T, FontSize = 11, FontWeight = FontWeights.Bold, Foreground = (Brush)Win.FindResource("Text"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+            por(gat, q.X, 14);
+        }
+        var corpo = new System.Windows.Shapes.Path { Data = Geometry.Parse("M100,36 H300 C356,36 378,86 388,146 C396,196 360,214 334,186 L296,146 H104 L66,186 C40,214 4,196 12,146 C22,86 44,36 100,36 Z"), Fill = couro, Stroke = aro, StrokeThickness = 2 };
+        por(corpo, 0, 0);
+        // alavancas e direcional
+        Func<double, System.Windows.Shapes.Ellipse> roda = r => new System.Windows.Shapes.Ellipse { Width = r * 2, Height = r * 2, Fill = new RadialGradientBrush(Color.FromRgb(0x2E, 0x27, 0x22), Color.FromRgb(0x12, 0x0F, 0x0C)), Stroke = aro, StrokeThickness = 1.5 };
+        por(roda(24), 78, 68); por(roda(24), 230, 122);
+        por(new System.Windows.Shapes.Path { Data = Geometry.Parse("M10,0 H20 V10 H30 V20 H20 V30 H10 V20 H0 V10 H10 Z"), Fill = new SolidColorBrush(Color.FromRgb(0x2A, 0x23, 0x1E)), Stroke = aro, StrokeThickness = 1.2 }, 128, 128);
+        // botões pequenos do meio
+        string[] meio = lay == "PS" ? new[] { "Create", "Options" } : lay == "Xbox" ? new[] { "View", "Menu" } : new[] { "−", "+" };
+        por(new TextBlock { Text = meio[0], FontSize = 10, Foreground = (Brush)Win.FindResource("Sub") }, 162, 74);
+        por(new TextBlock { Text = meio[1], FontSize = 10, Foreground = (Brush)Win.FindResource("Sub") }, 214, 74);
+        // botões de ação (cima, direita, baixo, esquerda)
+        string[] t; string[] c;
+        if (lay == "PS") { t = new[] { "△", "○", "✕", "☐" }; c = new[] { "#3E8E7E", "#C24B5A", "#4A7BC0", "#B06AA8" }; }
+        else if (lay == "Xbox") { t = new[] { "Y", "B", "A", "X" }; c = new[] { "#B89A2E", "#C24B3A", "#3FA34D", "#2F6FC0" }; }
+        else { t = new[] { "X", "A", "B", "Y" }; c = new[] { "#6E6E6E", "#6E6E6E", "#6E6E6E", "#6E6E6E" }; }
+        double cx = 300, cy = 92; var pos = new[] { new[] { 0.0, -26 }, new[] { 26.0, 0 }, new[] { 0.0, 26 }, new[] { -26.0, 0 } };
+        for (int i = 0; i < 4; i++)
+        {
+            var cor = (Color)ColorConverter.ConvertFromString(c[i]);
+            var bt = new Grid { Width = 24, Height = 24, RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform() };
+            bt.Children.Add(new System.Windows.Shapes.Ellipse { Fill = new RadialGradientBrush(Color.FromRgb((byte)Math.Min(255, cor.R + 50), (byte)Math.Min(255, cor.G + 50), (byte)Math.Min(255, cor.B + 50)), cor), Stroke = new SolidColorBrush(Color.FromArgb(0x99, 0, 0, 0)), StrokeThickness = 1 });
+            bt.Children.Add(new TextBlock { Text = t[i], FontSize = 12, FontWeight = FontWeights.Black, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+            por(bt, cx + pos[i][0] - 12, cy + pos[i][1] - 12);
+            botoesFace.Add(Tuple.Create(bt, i));
+        }
+        // o jogo confirma com o botão da direita e volta com o de baixo (layout do Switch, pela posição)
+        controleLegenda.Text = t[0] + "  sacar arma   ·   " + t[1] + "  atacar / confirmar   ·   " + t[2] + "  rolar / voltar   ·   " + t[3] + "  usar item";
+    }
+
+    // ---------- botões no jogo: a tradução vem com os ícones de PlayStation; Xbox e Nintendo são pacotes pequenos
+    // por cima (mods\MHGU pt-BR ~Botoes <layout>: o port aplica os mods em ordem alfabética e o último ganha;
+    // com "_" na frente a pasta fica desligada)
+    static readonly string[] LAYOUTS = { "Xbox", "Nintendo" };
+    string PastaLayout(string l, bool ligado) { return Path.Combine(ModsOn, (ligado ? "" : "_") + "MHGU pt-BR ~Botoes " + l); }
+    bool marcandoLayout;
+
+    void Layouts()
+    {
+        var rb = new Dictionary<string, RadioButton> { { "PS", F<RadioButton>("layPS") }, { "Xbox", F<RadioButton>("layXbox") }, { "Nintendo", F<RadioButton>("layNin") } };
+        foreach (var l in LAYOUTS)
+            if (!Directory.Exists(PastaLayout(l, true)) && !Directory.Exists(PastaLayout(l, false)))
+            {
+                var r = rb[l]; r.IsEnabled = false; r.Opacity = 0.45;
+                F<TextBlock>(l == "Xbox" ? "layInfoXbox" : "layInfoNin").Text = "não instalado";
+            }
+        MarcarLayout();
+        foreach (var kv in rb)
+        {
+            string nome = kv.Key;
+            kv.Value.Checked += (s, e) => { if (!marcandoLayout) TrocarLayout(nome); };
+        }
+    }
+
+    string LayoutAtual() { foreach (var l in LAYOUTS) if (Directory.Exists(PastaLayout(l, true))) return l; return "PS"; }
+
+    void MarcarLayout()
+    {
+        marcandoLayout = true;
+        string at = LayoutAtual();
+        F<RadioButton>(at == "Xbox" ? "layXbox" : at == "Nintendo" ? "layNin" : "layPS").IsChecked = true;
+        marcandoLayout = false;
+    }
+
+    void TrocarLayout(string escolha)
+    {
+        if (JogoAberto()) { MessageBox.Show("Feche o jogo para trocar os botões.", "MHGU Launcher"); MarcarLayout(); return; }
+        try
+        {
+            foreach (var l in LAYOUTS)
+            {
+                string on = PastaLayout(l, true), off = PastaLayout(l, false);
+                if (l == escolha && Directory.Exists(off)) Directory.Move(off, on);
+                if (l != escolha && Directory.Exists(on)) Directory.Move(on, off);
+            }
+            Toast("Botões de " + (escolha == "PS" ? "PlayStation" : escolha) + " no jogo");
+        }
+        catch (Exception ex) { MessageBox.Show("Não consegui trocar os botões: " + ex.Message, "MHGU Launcher"); }
+        MarcarLayout();
+    }
+
     // ---------- amigos online: cada launcher responde, na porta do jogo + 1 (UDP), quem é e o que está fazendo.
     // Pergunta "MHGU?1"; resposta "MHGU!1|nome|versão do port|versão do launcher|sincronia|estado" (L launcher, J jogando, H Hub aberto)
     class Status { public bool Online; public long Ping; public string Nome, Port, Launcher, Sync, Estado; }
@@ -1436,6 +1938,7 @@ class Launcher
             await Task.WhenAll(lista.Select(async a =>
             {
                 var st = await Consultar(a, porta);
+                Status antes; statusAmigos.TryGetValue(a, out antes);
                 statusAmigos[a] = st;
                 MontarAmigos(); Resumo();
             }));
@@ -1575,6 +2078,7 @@ class Launcher
         marcandoPerfil = false;
         perfilNome = atual != null ? atual.Nome : null;
         TextoPerfil();
+        MostrarQualidade(null);
     }
 
     string perfilNome, placaTexto, recomendado;
@@ -1865,6 +2369,7 @@ class Launcher
         F<UniformGrid>("huntersPanel").Columns = conteudo > 820 ? 3 : conteudo > 520 ? 2 : 1;
         F<UniformGrid>("modeGrid").Columns = conteudo > 560 ? 2 : 1;
         F<UniformGrid>("perfilGrid").Columns = conteudo > 620 ? 3 : 1;
+        F<UniformGrid>("layoutGrid").Columns = conteudo > 640 ? 3 : 1;
         F<Border>("hero").Height = Math.Max(240, Math.Min(420, conteudo * 0.38));
         F<Border>("miniPlayer").Width = Math.Max(260, Math.Min(460, conteudo * 0.5));
     }
@@ -2122,7 +2627,7 @@ class Launcher
             lista.Children.Add(card);
 
             double t = c.Ini + (c.Fim - c.Ini) * 0.4;
-            string png = Path.Combine(cache, "movie" + c.Video.ToString("00") + "_" + ((int)t) + ".png");
+            string png = Path.Combine(cache, "movie" + c.Video.ToString("00") + "_" + ((int)t) + "_640.png");
             BitmapSource bmp = null;
             if (File.Exists(png)) { try { bmp = BitmapFrame.Create(new Uri(png), BitmapCreateOptions.None, BitmapCacheOption.OnLoad); } catch { } }
             if (bmp == null)
@@ -2135,7 +2640,8 @@ class Launcher
     }
 
     // um quadro do vídeo no tempo t (MediaPlayer desenhado num bitmap)
-    static async Task<BitmapSource> Foto(string arq, double t)
+    static Task<BitmapSource> Foto(string arq, double t) { return Foto(arq, t, 640, 360); }
+    static async Task<BitmapSource> Foto(string arq, double t, int W, int H)
     {
         var mp = new MediaPlayer { IsMuted = true, ScrubbingEnabled = true };
         try
@@ -2149,11 +2655,11 @@ class Launcher
             mp.Position = TimeSpan.FromSeconds(t);
             await Task.Delay(900);
             var dv = new DrawingVisual();
-            using (var dc = dv.RenderOpen()) dc.DrawVideo(mp, new Rect(0, 0, 384, 216));
-            var rtb = new RenderTargetBitmap(384, 216, 96, 96, PixelFormats.Pbgra32);
+            using (var dc = dv.RenderOpen()) dc.DrawVideo(mp, new Rect(0, 0, W, H));
+            var rtb = new RenderTargetBitmap(W, H, 96, 96, PixelFormats.Pbgra32);
             rtb.Render(dv);
             // quadro todo preto (ainda não decodificou): não serve
-            var px = new byte[384 * 216 * 4]; rtb.CopyPixels(px, 384 * 4, 0);
+            var px = new byte[W * H * 4]; rtb.CopyPixels(px, W * 4, 0);
             long soma = 0; for (int k = 0; k < px.Length; k += 4 * 97) soma += px[k] + px[k + 1] + px[k + 2];
             if (soma < 2000) return null;
             rtb.Freeze();
@@ -2259,7 +2765,7 @@ class Launcher
         string res = ini.Get("Display", "Resolution", "Desktop"); if (res == "Desktop") res = Monitor();
         F<TextBlock>("stRes").Text = res;
         F<TextBlock>("stFps").Text = ini.Get("Performance", "FPS", "60") + " FPS" + (On(ini.Get("Performance", "VSync", "On")) ? " · VSync" : "");
-        int mods = Directory.Exists(ModsOn) ? Directory.GetDirectories(ModsOn).Length : 0;
+        int mods = Directory.Exists(ModsOn) ? Directory.GetDirectories(ModsOn).Count(d => !Path.GetFileName(d).StartsWith("_") && !Path.GetFileName(d).Contains("~Botoes")) : 0;
         F<TextBlock>("stMods").Text = mods + (mods == 1 ? " mod" : " mods");
         string j = ini.Get("Multiplayer", "Join", "");
         int on = statusAmigos.Count == 0 ? 0 : AmigosOnline();
