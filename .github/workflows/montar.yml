@@ -5,11 +5,16 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      versao:
+        description: "tag do Release para anexar (ex.: v3.0.0); vazio = só artifact"
+        default: ""
 permissions:
   contents: write
 jobs:
   montar:
     strategy:
+      fail-fast: false   # (um sistema falhando não cancela o outro)
       matrix:
         os: [windows-latest, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
@@ -25,14 +30,14 @@ jobs:
         run: npm run windows
       - if: runner.os == 'Linux'
         run: npm run linux
-      - if: github.event_name == 'release'
+      - if: github.event_name == 'release' || inputs.versao != ''
         shell: bash
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           shopt -s nullglob
           f=(dist/*-windows.exe dist/*-linux.AppImage dist/*-linux.deb)
-          gh release upload "${{ github.event.release.tag_name }}" "${f[@]}" --clobber
-      - if: github.event_name != 'release'
+          gh release upload "${{ github.event.release.tag_name || inputs.versao }}" "${f[@]}" --clobber
+      - if: github.event_name != 'release' && inputs.versao == ''
         uses: actions/upload-artifact@v4
         with:
           name: MHGU-Launcher-${{ runner.os }}

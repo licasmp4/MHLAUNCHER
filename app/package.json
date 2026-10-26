@@ -3,7 +3,11 @@
   "productName": "MHGU Launcher",
   "version": "3.0.0",
   "description": "Launcher do Monster Hunter Generations Ultimate no PC (MHGURecomp), em português. Feito por licas.mp3.",
-  "author": "licas.mp3",
+  "author": {
+    "name": "licas.mp3",
+    "email": "licasmp4@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER",
   "license": "MIT",
   "main": "src/main/main.js",
   "private": true,
@@ -24,16 +28,49 @@
     "appId": "com.licas.mhgulauncher",
     "productName": "MHGU Launcher",
     "copyright": "feito por licas.mp3",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["src/**", "package.json", "node_modules/**", "!**/*.map"],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**",
+      "package.json",
+      "node_modules/**",
+      "!**/*.map"
+    ],
     "icon": "build/icon.png",
-    "win": { "target": [{ "target": "portable", "arch": ["x64"] }], "artifactName": "MHGU-Launcher-${version}-windows.exe" },
-    "portable": { "artifactName": "MHGU-Launcher-${version}-windows.exe" },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "MHGU-Launcher-${version}-windows.exe"
+    },
+    "portable": {
+      "artifactName": "MHGU-Launcher-${version}-windows.exe"
+    },
     "linux": {
-      "target": [{ "target": "AppImage", "arch": ["x64"] }, { "target": "deb", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "category": "Game",
       "artifactName": "MHGU-Launcher-${version}-linux.${ext}",
-      "maintainer": "licas.mp3"
+      "maintainer": "licas.mp3 <licasmp4@users.noreply.github.com>"
     }
   }
 }
