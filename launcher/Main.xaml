@@ -49,8 +49,11 @@
         <ControlTemplate TargetType="RadioButton">
           <Grid x:Name="g" Margin="10,1" Background="Transparent" RenderTransformOrigin="0.5,0.5">
             <Grid.RenderTransform><ScaleTransform x:Name="sc"/></Grid.RenderTransform>
-            <Border x:Name="hov" Background="#14FFFFFF" Opacity="0" CornerRadius="7"/>
-            <Border x:Name="b" Background="{StaticResource GlassBtn}" BorderBrush="{StaticResource Rim}" BorderThickness="1" Opacity="0" CornerRadius="9"/>
+            <Border x:Name="hov" Background="#12E9DDC5" Opacity="0" CornerRadius="6"/>
+            <Border x:Name="b" BorderBrush="#59E0593A" BorderThickness="1" Opacity="0" CornerRadius="6">
+              <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#47E0593A" Offset="0"/><GradientStop Color="#0DE0593A" Offset="1"/></LinearGradientBrush></Border.Background>
+            </Border>
+            <Border x:Name="bar" Width="3" Height="18" CornerRadius="2" Background="{StaticResource Ember}" HorizontalAlignment="Left" Opacity="0"/>
             <Grid Margin="10,7">
               <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition/></Grid.ColumnDefinitions>
               <Path x:Name="ic" Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Stretch="Uniform" Width="17" Height="17" HorizontalAlignment="Left" Stroke="#BFAE95" StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" VerticalAlignment="Center"/>
@@ -65,8 +68,8 @@
             <Trigger Property="IsChecked" Value="True">
               <Setter Property="FontWeight" Value="Bold"/>
               <Setter TargetName="ic" Property="Stroke" Value="#F28B6B"/>
-              <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
-              <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+              <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.22"/><DoubleAnimation Storyboard.TargetName="bar" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.22"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+              <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="b" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/><DoubleAnimation Storyboard.TargetName="bar" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
               <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleX" To="0.97" Duration="0:0:0.06"/><DoubleAnimation Storyboard.TargetName="sc" Storyboard.TargetProperty="ScaleY" To="0.97" Duration="0:0:0.06"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
@@ -357,8 +360,8 @@
     </Style>
     <Style x:Key="SbThumb" TargetType="Thumb">
       <Setter Property="Template"><Setter.Value>
-        <ControlTemplate TargetType="Thumb"><Border x:Name="b" CornerRadius="3" Background="#48484A"/>
-          <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="#636366"/></Trigger></ControlTemplate.Triggers>
+        <ControlTemplate TargetType="Thumb"><Border x:Name="b" CornerRadius="3" Background="#99C9AE8E"/>
+          <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="#E0E9DDC5"/></Trigger></ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value></Setter>
     </Style>
@@ -369,6 +372,18 @@
           <Track x:Name="PART_Track" IsDirectionReversed="True">
             <Track.Thumb><Thumb Style="{StaticResource SbThumb}"/></Track.Thumb>
           </Track>
+        </ControlTemplate>
+      </Setter.Value></Setter>
+    </Style>
+    <Style TargetType="ScrollViewer">
+      <Setter Property="Template"><Setter.Value>
+        <ControlTemplate TargetType="ScrollViewer">
+          <Grid Background="{TemplateBinding Background}">
+            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" Margin="{TemplateBinding Padding}"/>
+            <ScrollBar x:Name="PART_VerticalScrollBar" Orientation="Vertical" HorizontalAlignment="Right" Margin="0,6,-6,6" Opacity="0"
+                       Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}"
+                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+          </Grid>
         </ControlTemplate>
       </Setter.Value></Setter>
     </Style>
@@ -492,7 +507,7 @@
                   <!-- cena do jogo (o mesmo vídeo do fundo, nítido) -->
                   <Grid x:Name="heroVideo" Opacity="0">
                     <Grid x:Name="vidHost" Background="Black">
-                      <MediaElement x:Name="vid" LoadedBehavior="Manual" UnloadedBehavior="Manual" IsMuted="True" Stretch="UniformToFill" ScrubbingEnabled="False" RenderOptions.BitmapScalingMode="Linear"/>
+                      <MediaElement x:Name="vid" LoadedBehavior="Manual" UnloadedBehavior="Manual" IsMuted="True" Stretch="UniformToFill" ScrubbingEnabled="False" RenderOptions.BitmapScalingMode="HighQuality"/>
                       <Rectangle x:Name="vidFade" Fill="Black" Opacity="1"/>
                     </Grid>
                   </Grid>
@@ -826,7 +841,7 @@
                 <TextBlock Text="HUD de caça" Style="{StaticResource CardTitle}"/>
                 <Grid Style="{StaticResource Row}"><StackPanel Margin="0,0,70,0"><TextBlock Text="Barra de vida do monstro" Style="{StaticResource Lbl}"/><TextBlock x:Name="hintHp" Text="Vida atual, máxima e porcentagem do monstro marcado, com coroa e raiva." Style="{StaticResource Hint}"/></StackPanel><CheckBox x:Name="tgHpBar" Style="{StaticResource Toggle}"/></Grid>
                 <Grid Style="{StaticResource Row}"><StackPanel Margin="0,0,70,0"><TextBlock Text="Números de dano" Style="{StaticResource Lbl}"/><TextBlock x:Name="hintDmg" Text="Mostra o dano de cada golpe seu (amarelo = ponto fraco)." Style="{StaticResource Hint}"/></StackPanel><CheckBox x:Name="tgDmg" Style="{StaticResource Toggle}"/></Grid>
-                <TextBlock Text="A barra de vida aparece quando o monstro está marcado na câmera de alvo. No jogo, Insert abre o menu Forge &gt; Plugin UI (posição, cores, tamanho)." Style="{StaticResource Hint}" Margin="0,6,0,0"/>
+                <TextBlock Text="A barra mostra sozinha o monstro grande da área (marcando outro na câmera de alvo, ela segue o marcado). No jogo, Insert abre o menu Forge &gt; Plugin UI (posição, cores, tamanho)." Style="{StaticResource Hint}" Margin="0,6,0,0"/>
               </StackPanel></Border>
               <Border Style="{StaticResource Card}"><StackPanel>
                 <Grid><TextBlock Text="Diagnóstico da última caçada" Style="{StaticResource CardTitle}"/><Button x:Name="btnHudRefresh" Style="{StaticResource Btn}" Content="Atualizar" HorizontalAlignment="Right" Padding="10,4" Margin="0,-6,0,0"/></Grid>

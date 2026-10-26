@@ -2225,7 +2225,7 @@ class Launcher
             else DiagLinha(p, "Ok", "Barra de vida: funcionando (monstro marcado e barra desenhada).");
             DiagLinha(p, "Sub", "Detalhe técnico: " + string.Join("  ·  ", new[] { telaVida, imguiVida }.Where(x => x != null)));
         }
-        else if (semAlvo) DiagLinha(p, "Gold", "Barra de vida: nenhum monstro foi marcado. Marque o monstro grande na câmera de alvo que a barra aparece.");
+        else if (semAlvo) DiagLinha(p, "Gold", "Barra de vida: nenhum monstro grande apareceu na área ainda. Ela surge sozinha quando ele estiver por perto.");
         else DiagLinha(p, "Gold", "Barra de vida: " + vida);
 
         // números de dano
