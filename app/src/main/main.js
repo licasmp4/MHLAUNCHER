@@ -53,16 +53,27 @@ function criarJanela() {
   win.on("close", salvarIniJa);
 }
 
-// --prints <pasta>: uma imagem de cada página (para conferir o visual)
+// --prints <pasta>: imagens de cada página, rolando até o fim (para conferir o visual)
 async function tirarPrints() {
   fs.mkdirSync(printsDir, { recursive: true });
   const espera = ms => new Promise(r => setTimeout(r, ms));
-  await espera(5000);
+  const js = c => win.webContents.executeJavaScript(c);
+  await espera(6000);
+  let n = 0;
   for (const p of ["inicio", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"]) {
     win.webContents.send("nav", p);
-    await espera(1300);
-    const img = await win.webContents.capturePage();
-    fs.writeFileSync(path.join(printsDir, p + ".png"), img.toPNG());
+    await espera(2500);
+    const sel = JSON.stringify("#pg-" + p);
+    const { alto, tela } = await js(`(() => { const e = document.querySelector(${sel}); e.scrollTop = 0; return { alto: e.scrollHeight, tela: e.clientHeight }; })()`);
+    const partes = Math.max(1, Math.ceil((alto - 8) / (tela * 0.85)));
+    n++;
+    for (let i = 0; i < partes; i++) {
+      if (i) { await js(`document.querySelector(${sel}).scrollTop = ${Math.round(i * tela * 0.85)}`); await espera(1000); }
+      // o Windows devolve o último quadro já pintado: força um novo e descarta o primeiro
+      win.webContents.invalidate(); await espera(400); await win.webContents.capturePage(); await espera(400);
+      const img = await win.webContents.capturePage();
+      fs.writeFileSync(path.join(printsDir, String(n).padStart(2, "0") + "-" + p + (partes > 1 ? "-" + (i + 1) : "") + ".png"), img.toPNG());
+    }
   }
   app.quit();
 }
