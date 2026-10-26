@@ -1,0 +1,26 @@
+# programas compilados (vão nos Releases, não no código)
+dist/
+*.exe
+*.ico
+
+# NUNCA suba arquivos do jogo, chaves ou saves
+*.xci
+*.nsp
+*.nca
+*.keys
+prod.keys
+title.keys
+exefs/
+romfs/
+data/
+save*/
+system
+system_backup
+
+# coisas locais do jogo/launcher
+log.txt
+mhgurecomp.ini
+launcher.ini
+launcher_amigos.txt
+launcher_novidades.txt
+versao_port.txt

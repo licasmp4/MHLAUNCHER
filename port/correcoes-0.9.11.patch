@@ -1,0 +1,28 @@
+﻿diff --git a/runtime/net/emsync.c b/runtime/net/emsync.c
+index 4927570..75b2873 100644
+--- a/runtime/net/emsync.c
++++ b/runtime/net/emsync.c
+@@ -148,10 +148,23 @@ void emsync_tick(void) {
+ 
+ // The patched entry of the per-monster receive (0x2cb120: r0 = monster, r2 = the message's parameters, byte 1 = the
+ // sender's slot). True: drop the message.
++// Only the movement kinds are filtered (byte 3 of the parameters: 1 = netEmAction, 2 = its follow-up): those are what
++// a master sends. Everything else (status, ailments, death / revival: kind 4 writes the state and calls the death
++// path) is what the original game already exchanges for small monsters without any master; dropping it on the
++// master's game lost the deaths and damage caused by the other players (a Jaggi killed by a follower stayed alive
++// for the master).
+ int emsync_filter(Cpu *c) {
+     if (!g_config.sync_small_monsters || g_area < 0) return 0;
+     uint32_t info;
+     if (!is_zako(c->r[0], &info)) return 0;
++    uint8_t kind = LD8(c->r[2] + 3);
++    if (kind != 1 && kind != 2) {
++        static uint32_t passed;
++        if ((passed++ & 63) == 0)
++            LOG("[emsync] small monster status message kind %u from slot %u passed (%u so far)\n", kind,
++                LD8(c->r[2] + 1), passed);
++        return 0;
++    }
+     if (g_master) return 1;  // (a moment of two masters: keep ours)
+     uint32_t spl = LD32(G_SPLAYER);
+     int sender = LD8(c->r[2] + 1);
