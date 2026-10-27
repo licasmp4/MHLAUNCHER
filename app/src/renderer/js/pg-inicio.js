@@ -1,4 +1,5 @@
-// Início: a missão em destaque (cena do jogo tocando), o quadro de missões, seus números e seus caçadores.
+// Início, o acampamento: a missão em destaque (cena do jogo tocando) e a fogueira com o seu caçador, o mural de
+// missões, a bolsa com os seus números e os outros caçadores do save.
 window.Paginas = window.Paginas || {};
 Paginas.inicio = {
   async montar(c) {
@@ -50,11 +51,13 @@ Paginas.inicio = {
     const fps = await ini.get("Performance", "FPS", "60"), vs = await ini.get("Performance", "VSync", "On");
     const ms = (await api.mods()).filter(m => m.ligado).length;
     const tOnline = el("b", {}, "Hospedar");
-    const tiles = el("div", { class: "grade g4" },
-      el("div", { class: "tile" }, svg("tela"), el("small", {}, "Resolução"), el("b", { class: "num" }, res === "Desktop" ? est.monitor.largura + "x" + est.monitor.altura : res)),
-      el("div", { class: "tile" }, svg("raio"), el("small", {}, "Limite de FPS"), el("b", { class: "num" }, fps + " FPS" + (vs === "On" ? " · VSync" : ""))),
-      el("div", { class: "tile" }, svg("bolsa"), el("small", {}, "Mods ativos"), el("b", {}, ms + (ms === 1 ? " mod" : " mods"))),
-      el("div", { class: "tile" }, svg("pessoas"), el("small", {}, "Online"), tOnline));
+    // a bolsa: cada número num espaço do inventário, com o ícone em pixel (pula com o mouse em cima)
+    const slot = (ic, rot, val) => el("div", { class: "slot" }, el("div", { class: "caixinha" }, Pixel.icone(ic)), el("div", {}, el("small", {}, rot), val));
+    const tiles = el("div", { class: "bolsa" },
+      slot("tela", "Resolução", el("b", { class: "num" }, res === "Desktop" ? est.monitor.largura + "x" + est.monitor.altura : res)),
+      slot("ampulheta", "Limite de FPS", el("b", { class: "num" }, fps + " FPS" + (vs === "On" ? " · VSync" : ""))),
+      slot("bau", "Mods ativos", el("b", {}, ms + (ms === 1 ? " mod" : " mods"))),
+      slot("bandeira", "Online", tOnline));
     Paginas.inicio.tileOnline = tOnline;
 
     // ---- caçadores (Cartão de Guilda)
@@ -71,8 +74,23 @@ Paginas.inicio = {
         botao("Importar save", async () => { const r = await api.savesImportar(emu.arquivo); toast(r.erro || "Save importado"); }, "primario")));
     }
 
-    c.append(destaque, avisos, el("h3", { class: "secao", style: { marginTop: "26px" } }, "Quadro de missões", el("span", { class: "acao dica" }, "escolha um cartaz para ver em destaque")),
-      prateleira, el("h3", { class: "secao", style: { marginTop: "8px" } }, "Seu jogo"), tiles, el("h3", { class: "secao", style: { marginTop: "26px" } }, "Seus caçadores"), cartas);
+    // a fogueira do acampamento, com o caçador principal embaixo; clicar no fogo deixa a carne bem passada
+    const fogo = Pixel.fogueira();
+    fogo.cv.title = "Assar a carne";
+    fogo.cv.addEventListener("click", () => { fogo.atiçar(); setTimeout(() => toast("Carne bem passada!"), 1800); });
+    const h = mostrar[0];
+    const cacador = h ? el("div", { class: "cacador" }, el("div", { class: "hr" }, el("small", {}, "HR"), el("b", {}, h.hr)),
+      el("div", { class: "q" }, el("small", {}, "Cartão de Guilda"), el("b", {}, h.nome),
+        el("span", { class: "num" }, (h.horas < 1 ? Math.round(h.horas * 60) + " min" : h.horas.toFixed(1).replace(".", ",") + " h") + " · " + fmt(h.zenny) + " z")))
+      : el("div", { class: "cacador vazio" }, el("div", { class: "q" }, el("small", {}, "Acampamento"), el("b", {}, "Nenhum caçador ainda"), el("span", {}, "Crie um no jogo ou importe o seu save.")));
+    const painel = el("aside", { class: "fogo-painel" }, fogo.cv, cacador);
+    const sec = (t, acao) => el("h3", { class: "secao", style: { marginTop: "26px" } }, t, acao || null);
+
+    c.append(el("div", { class: "acamp" }, destaque, painel), avisos,
+      sec("Mural de missões", el("span", { class: "acao dica" }, "escolha um cartaz para ver em destaque")),
+      el("div", { class: "mural" }, el("i", { class: "prego a" }), el("i", { class: "prego b" }), el("i", { class: "prego c" }), el("i", { class: "prego d" }), prateleira),
+      sec("Sua bolsa"), tiles,
+      ...(mostrar.length > 1 ? [sec("Seus caçadores"), cartas] : []));
     Paginas.inicio.avisos = avisos;
 
     if ((await api.configGet("cenas")) !== false && Cenas.LISTA.length) {

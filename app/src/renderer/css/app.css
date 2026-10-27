@@ -342,3 +342,37 @@ nav button.tem-novo::after { content: ""; position: absolute; right: 12px; top: 
   .lib-estante { gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .lib-destaque.troca .caixa, .lib-destaque.troca .lib-info > * { animation: none; } .lib-palco .caixa { transition: none; } }
+
+/* Início, o acampamento: a cena e a fogueira lado a lado, o mural de madeira e a bolsa */
+.acamp { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: stretch; }
+.fogo-painel { display: grid; grid-template-rows: minmax(0, 1fr) auto; overflow: hidden; background: #090f0b; border: 2px solid var(--linha2); box-shadow: var(--sombra); }
+.px-fogueira { width: 100%; height: 100%; min-height: 200px; object-fit: cover; image-rendering: pixelated; cursor: pointer; display: block; }
+.cacador { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px; background: var(--s1); border-top: 2px solid var(--linha2); }
+.cacador.vazio { grid-template-columns: minmax(0, 1fr); }
+.cacador .hr { width: 52px; height: 52px; display: grid; place-content: center; text-align: center; background: #2b1a13; border: 2px solid var(--brasa); box-shadow: 2px 2px 0 #5b2419; }
+.cacador .hr small { font: 400 7px var(--rotulo, monospace); color: #f3c9a0; letter-spacing: .1em; }
+.cacador .hr b { font: 400 22px/1 var(--display); color: #fff3df; }
+.cacador .q { display: grid; gap: 2px; min-width: 0; }
+.cacador .q small { font: 400 7px var(--rotulo, monospace); color: var(--tx3); letter-spacing: .12em; text-transform: uppercase; }
+.cacador .q b { font: 400 19px/1.1 var(--display); color: var(--tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cacador .q span { font-size: 13px; color: var(--tx2); }
+/* mural de madeira em pixel, com quatro pregos */
+.mural { position: relative; padding: 18px 10px 8px; border: 4px solid #1a1008; box-shadow: var(--sombra), inset 0 0 0 2px #4a321d;
+  background: repeating-linear-gradient(180deg, #3a2716 0 26px, #2e1f12 26px 28px, #1e140b 28px 30px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, .12) 0 2px, transparent 2px 90px); }
+.mural .prego { position: absolute; width: 8px; height: 8px; background: #8f9187; box-shadow: inset -2px -2px 0 #4c4e46, 1px 1px 0 #000; z-index: 2; }
+.mural .prego.a { left: 8px; top: 8px; }
+.mural .prego.b { right: 8px; top: 8px; }
+.mural .prego.c { left: 8px; bottom: 8px; }
+.mural .prego.d { right: 8px; bottom: 8px; }
+.mural .prateleira { margin: 0; }
+/* a bolsa: espaços de inventário */
+.bolsa { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.slot { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; background: var(--s1); border: 2px solid var(--linha2); box-shadow: 3px 3px 0 var(--sombra-dura, #000); }
+.slot .caixinha { width: 60px; height: 60px; display: grid; place-items: center; background: #070c09; border: 2px solid var(--linha3); box-shadow: inset 3px 3px 0 rgba(0, 0, 0, .55); }
+.px-icone { width: 48px; height: 48px; image-rendering: pixelated; }
+.slot:hover .px-icone { animation: pixelPulo .3s steps(3, end) forwards; }
+.slot:hover { border-color: var(--musgo, #7f955c); }
+.slot small { display: block; font: 400 7px var(--rotulo, monospace); letter-spacing: .12em; text-transform: uppercase; color: var(--tx3); margin-bottom: 4px; }
+.slot b { font: 400 18px/1.15 var(--display); color: var(--tx); }
+@media (max-width: 1040px) { .acamp { grid-template-columns: minmax(0, 1fr); } .bolsa { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
