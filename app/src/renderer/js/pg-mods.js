@@ -47,7 +47,7 @@ Paginas.sobre = {
         pBtn.onclick = async () => { pBtn.disabled = true; try { const n = await api.atualizaPortAplicar(r); toast("Port atualizado para " + r.ultima); pTxt.textContent = "Atualizado para " + r.ultima + " (" + n + " arquivo(s); os antigos estão em port_anterior)."; pTxt.style.color = "var(--verde)"; } catch (e) { toast(String(e.message || e)); } pBtn.disabled = false; };
       } catch { pTxt.textContent = "Sem internet agora."; }
     }
-    api.aoProgresso(({ tipo, p }) => { const b = tipo === "launcher" ? lBtn : pBtn; b.textContent = "Baixando " + p + "%"; });
+    api.aoProgresso(({ tipo, p }) => { if (tipo.startsWith("jogo:")) return; const b = tipo === "launcher" ? lBtn : pBtn; b.textContent = "Baixando " + p + "%"; });
     verLauncher().then(verPort);
     Paginas.sobre.reverificar = () => verLauncher().then(verPort);
 

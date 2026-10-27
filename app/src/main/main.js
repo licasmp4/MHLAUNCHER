@@ -4,6 +4,9 @@ const fs = require("fs"), path = require("path");
 const { pathToFileURL } = require("url");
 const { Ini } = require("./ini");
 const jogo = require("./jogo"), rede = require("./rede"), sistema = require("./sistema"), mods = require("./mods"), atualiza = require("./atualiza"), diag = require("./diag");
+const biblioteca = require("./biblioteca");
+// o app se chamava "MHGU Launcher": a pasta de dados (configuração, fotos das cenas) continua a mesma com o nome novo
+app.setPath("userData", path.join(app.getPath("appData"), "MHGU Launcher"));
 
 let win = null, ini = null, dir = null, jogoProc = null, salvarTimer = null;
 
@@ -63,7 +66,7 @@ async function tirarPrints() {
   const js = c => win.webContents.executeJavaScript(c);
   await espera(6000);
   let n = 0;
-  for (const p of ["inicio", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"]) {
+  for (const p of ["jogos", "inicio", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"]) {
     win.webContents.send("nav", p);
     await espera(2500);
     const sel = JSON.stringify("#pg-" + p);
@@ -157,6 +160,17 @@ function registrar() {
   h("novidades", () => { const f = path.join(app.getPath("userData"), "novidades.json"); try { const n = JSON.parse(fs.readFileSync(f, "utf8")); fs.unlinkSync(f); return n.versao === app.getVersion() ? n : null; } catch { return null; } });
 
   h("diag", () => dir && diag.ler(dir));
+  // biblioteca: os outros ports de Monster Hunter (main/biblioteca.js)
+  h("biblioteca", () => biblioteca.estado());
+  h("biblioteca:procurar", () => biblioteca.procurar());
+  h("biblioteca:instalar", id => biblioteca.instalar(id, p => win && win.webContents.send("progresso", { tipo: "jogo:" + id, p })));
+  h("biblioteca:abrir", id => biblioteca.abrir(id));
+  h("biblioteca:abrirPasta", id => { const p = biblioteca.pastaDe(id); fs.mkdirSync(p, { recursive: true }); shell.openPath(p); });
+  h("biblioteca:pasta", async id => {
+    const r = await dialog.showOpenDialog(win, { title: "Onde instalar (ou onde já está instalado)", properties: ["openDirectory", "createDirectory"], defaultPath: biblioteca.pastaDe(id) });
+    if (r.canceled || !r.filePaths[0]) return null;
+    biblioteca.definirPasta(id, r.filePaths[0]); return biblioteca.estado()[id];
+  });
   // cenas do jogo: os vídeos da cópia do jogador, e as fotos tiradas deles (cache)
   h("cena:video", n => { const nome = "movie" + String(n).padStart(2, "0") + ".mp4", f = dir && path.join(dir, "data", "romfs", "nativeNX", "movie", nome); return f && fs.existsSync(f) ? "mhgu://app/_jogo/" + nome : null; });
   h("logo", () => dir && fs.existsSync(path.join(dir, "mhgu.ico")) ? "mhgu://app/_logo.ico" : null);

@@ -1,18 +1,20 @@
 <div align="center">
 
-<img src="docs/img/banner.svg" alt="MHGU Launcher: Monster Hunter Generations Ultimate no PC em português" width="100%">
+<img src="docs/img/banner.svg" alt="MHLAUNCHER: os ports de Monster Hunter no PC, em português" width="100%">
 
 <br>
 
-[![Versão](https://img.shields.io/github/v/release/licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER?style=for-the-badge&color=E8A33D&label=vers%C3%A3o)](../../releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER/total?style=for-the-badge&color=4CC38A&label=downloads)](../../releases)
+[![Versão](https://img.shields.io/github/v/release/licasmp4/MHLAUNCHER?style=for-the-badge&color=E8A33D&label=vers%C3%A3o)](../../releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/licasmp4/MHLAUNCHER/total?style=for-the-badge&color=4CC38A&label=downloads)](../../releases)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?style=for-the-badge&logo=windows&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-Ubuntu%20%7C%20Arch-E95420?style=for-the-badge&logo=linux&logoColor=white)
 ![Idioma](https://img.shields.io/badge/idioma-pt--BR-009C3B?style=for-the-badge)
-![Port](https://img.shields.io/badge/MHGURecomp-0.9.11-8C93A3?style=for-the-badge)
+![Port](https://img.shields.io/badge/MHGURecomp-0.10.1-8C93A3?style=for-the-badge)
 
-**Jogue Monster Hunter Generations Ultimate no PC, nativo, em português, com texturas HD e online com os amigos.**<br>
-Um instalador que te guia passo a passo e um launcher que configura tudo sem você abrir uma pasta sequer.
+# MHLAUNCHER
+
+**Os ports de Monster Hunter no PC num lugar só, em português.**<br>
+O Generations Ultimate nativo, traduzido, com texturas HD e online com os amigos, e o 4 Ultimate e o Freedom Unite com um clique.
 
 [**⬇️ Baixar**](../../releases/latest) · [Como instalar](#-como-instalar) · [Recursos](#-recursos) · [Jogar online](#-jogar-online) · [Dúvidas](#-dúvidas)
 
@@ -23,6 +25,17 @@ Um instalador que te guia passo a passo e um launcher que configura tudo sem voc
 <div align="center">
   <img src="docs/img/inicio.png" alt="Tela inicial do MHGU Launcher" width="85%">
 </div>
+
+## 🐉 Biblioteca
+
+| Jogo | Port | O que o MHLAUNCHER faz |
+|---|---|---|
+| **Generations Ultimate** (Switch) | [MHGURecomp](https://github.com/morerokk/MHGURecomp) | Instalador completo, tradução pt-BR, HD, HUD de caça, online e todos os ajustes |
+| **4 Ultimate** (3DS) | [MH4UltimateDC](https://github.com/CompaLarios18/MH4UltimateDC) | Instala, atualiza e abre o port |
+| **Freedom Unite** (PSP) | [MHForever](https://github.com/Mango77x/MHForever) | Instala, atualiza e abre o port |
+| **Portable 3rd** (PSP) | ainda sem port | Aparece quando sair |
+
+Os ports são projetos de fãs, cada um com o seu autor e a sua licença. Nenhum jogo vem junto: cada um usa a própria cópia. O MHLAUNCHER avisa quando sai versão nova de qualquer um deles.
 
 ## ✨ Por que usar
 

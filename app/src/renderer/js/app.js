@@ -2,27 +2,15 @@
 (async () => {
   const est = await api.estado();
   document.documentElement.dataset.so = est.plataforma;  // (win32: os botões da janela são os do Windows)
-  const logo = await api.logo(); if (logo) $("#logo").style.backgroundImage = "url('" + logo + "')"; else $("#logo").style.background = "url('img/icone.png') center/cover";
+  $("#logo").style.background = "url('img/icone.png') center/cover";
 
-  if (!est.pasta) {
-    // sem a pasta do jogo: quem baixou só o launcher ainda não tem o jogo instalado; quem já tem escolhe a pasta
-    // (Windows: onde fica o mhgurecomp.exe; Linux: o mhgurecomp)
-    const c = $("#pg-inicio .conteudo"); $("#pg-inicio").classList.add("ativa");
-    const exe = est.plataforma === "win32" ? "mhgurecomp.exe" : "mhgurecomp";
-    const passo = (n, t) => el("div", { class: "linha", style: { gridTemplateColumns: "28px 1fr" } }, el("span", { class: "selo brasa", style: { justifyContent: "center" } }, n), el("span", {}, t));
-    c.append(el("div", { class: "cartao", style: { marginTop: "40px" } }, secao("Ainda não instalou o jogo?"),
-      el("div", { class: "dica", style: { fontSize: "15px", marginBottom: "6px" } }, "Este launcher só abre e ajusta o jogo; ele não instala nada. Primeiro instale com o instalador:"),
-      passo("1", "Baixe o Novo-MHGU.zip na página de downloads e extraia."),
-      passo("2", "Abra o Instalar MHGU.exe. Ele pede o seu jogo (XCI), a atualização 1.4.0 (NSP) e o prod.keys, tirados do seu Switch."),
-      passo("3", "No fim ele instala o port, a tradução e este launcher, e cria o atalho na Área de Trabalho."),
-      el("div", { style: { marginTop: "14px" } }, botao("Baixar o instalador", () => api.externo("https://github.com/licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER/releases/latest"), "primario", "baixar"))),
-      el("div", { class: "aviso", style: { marginTop: "16px" } }, el("div", { class: "t" }, el("b", {}, "Já instalou?"), el("span", {}, "Escolha a pasta do jogo (a que tem o " + exe + ").")),
-        botao("Escolher pasta", async () => { if (await api.pastaEscolher()) location.reload(); else toast("Essa pasta não tem o " + exe); }, "", "pasta")));
-    return;
-  }
+  // sem o Generations Ultimate instalado o launcher abre na biblioteca (os outros ports funcionam sem ele) e as abas
+  // dele somem; o cartão dele na biblioteca explica como instalar
+  const temGU = !!est.pasta;
+  if (!temGU) $$("[data-gu]").forEach(e => e.hidden = true);
 
   // ---- páginas: a primeira já aparece, as outras montam logo depois (abrir fica rápido)
-  const ordem = ["inicio", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"];
+  const ordem = temGU ? ["inicio", "jogos", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"] : ["jogos", "sobre"];
   const montadas = {};
   async function montar(p) { if (montadas[p]) return montadas[p]; montadas[p] = (async () => { const c = $("#pg-" + p + " .conteudo"); try { await Paginas[p].montar(c); } catch (e) { console.error(p, e); c.append(el("div", { class: "aviso" }, el("div", { class: "t" }, el("b", {}, "Algo deu errado nesta página"), el("span", {}, String(e.message || e))))); } numerar(c); })(); return montadas[p]; }
 
@@ -55,7 +43,7 @@
   // barra de rolagem: só aparece enquanto rola
   $$(".pagina, nav").forEach(s => { let t; s.addEventListener("scroll", () => { s.classList.add("rolando"); clearTimeout(t); t = setTimeout(() => s.classList.remove("rolando"), 900); }); });
 
-  await ir("inicio", false);
+  await ir(ordem[0], false);
   // as outras páginas montam em seguida, uma a uma (o índice da busca já fica completo)
   for (const p of ordem.slice(1)) await montar(p);
 
@@ -113,23 +101,26 @@
   async function procurarAtualizacoes() {
     const novas = [];
     try { const r = await api.atualizaLauncher(); if (r && r.nova) novas.push({ k: "l" + r.ultima, t: "launcher v" + r.ultima }); if (r && r.correcao) novas.push({ k: "c" + r.correcao.nome, t: "correções do port " + r.correcao.nome }); } catch {}
-    try { const p = await api.atualizaPort(); if (p && p.nova) novas.push({ k: "p" + p.ultima, t: "port " + p.ultima }); } catch {}
-    $('nav button[data-p="sobre"]').classList.toggle("tem-novo", novas.length > 0);
+    if (temGU) try { const p = await api.atualizaPort(); if (p && p.nova) novas.push({ k: "p" + p.ultima, t: "port " + p.ultima }); } catch {}
+    try { const b = await api.bibliotecaProcurar(); for (const g of BIBLIOTECA) if (b[g.id] && b[g.id].nova) novas.push({ k: g.id + b[g.id].ultima, t: g.cod + " " + b[g.id].ultima, jogo: true }); } catch {}
+    $('nav button[data-p="sobre"]').classList.toggle("tem-novo", novas.some(n => !n.jogo));
+    $('nav button[data-p="jogos"]').classList.toggle("tem-novo", novas.some(n => n.jogo));
     const agora = novas.filter(n => !avisadas.has(n.k));
     if (!agora.length) return;
     agora.forEach(n => avisadas.add(n.k));
     const txt = agora.map(n => n.t).join(" · ");
     $$(".aviso.atualizacao").forEach(a => a.remove());
-    const a = aviso("Atualização disponível", "Nova versão: " + txt + ". Leva um minuto e não mexe no seu save.", botao("Ver e atualizar", () => ir("sobre"), "primario", "baixar"), true);
-    a.classList.add("atualizacao"); Paginas.inicio.avisos.prepend(a);
+    const a = aviso("Atualização disponível", "Nova versão: " + txt + ". Leva um minuto e não mexe no seu save.", botao("Ver e atualizar", () => ir(agora.every(n => n.jogo) ? "jogos" : "sobre"), "primario", "baixar"), true);
+    a.classList.add("atualizacao"); if (Paginas.inicio.avisos) Paginas.inicio.avisos.prepend(a);
     toast("Atualização disponível: " + txt);
     if (document.hidden || !document.hasFocus())
-      try { const n = new Notification("MHGU Launcher: atualização disponível", { body: "Nova versão: " + txt + ". Clique para ver." }); n.onclick = () => { api.janela("mostrar"); ir("sobre"); }; } catch {}
-    if (Paginas.sobre.reverificar) Paginas.sobre.reverificar();
+      try { const n = new Notification("MHGU Launcher: atualização disponível", { body: "Nova versão: " + txt + ". Clique para ver." }); n.onclick = () => { api.janela("mostrar"); ir(agora.every(n => n.jogo) ? "jogos" : "sobre"); }; } catch {}
+    if (Paginas.sobre && Paginas.sobre.reverificar) Paginas.sobre.reverificar();
+    if (Paginas.jogos.procurar && agora.some(n => n.jogo)) Paginas.jogos.procurar();
   }
   setTimeout(procurarAtualizacoes, 6000);
   setInterval(procurarAtualizacoes, 30 * 60 * 1000);
 
   const nov = await api.novidades();
-  if (nov) Paginas.inicio.avisos.prepend(aviso("Atualizado para a v" + nov.versao, nov.notas.split(/\r?\n/).filter(Boolean).slice(0, 4).join(" · "), botao("Entendi", e => e.target.closest(".aviso").remove(), "peq"), true));
+  if (nov && Paginas.inicio.avisos) Paginas.inicio.avisos.prepend(aviso("Atualizado para a v" + nov.versao, nov.notas.split(/\r?\n/).filter(Boolean).slice(0, 4).join(" · "), botao("Entendi", e => e.target.closest(".aviso").remove(), "peq"), true));
 })();

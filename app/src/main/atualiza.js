@@ -4,8 +4,9 @@ const { app } = require("electron");
 const AdmZip = require("adm-zip");
 const WIN = process.platform === "win32";
 
-const PORT = "morerokk/MHGURecomp", LAUNCHER = "licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER";
-const H = { "User-Agent": "MHGU-Launcher", Accept: "application/vnd.github+json" };
+// o repositório do launcher se chama MHLAUNCHER; o nome antigo fica de reserva (até a troca, e o GitHub redireciona)
+const PORT = "morerokk/MHGURecomp", LAUNCHER = "licasmp4/MHLAUNCHER", LAUNCHER_ANTIGO = "licasmp4/MONSTER-HUNTER-GU-PORT-LAUNHCER";
+const H = { "User-Agent": "MHLAUNCHER", Accept: "application/vnd.github+json" };
 
 async function release(repo) {
   const r = await fetch("https://api.github.com/repos/" + repo + "/releases/latest", { headers: H });
@@ -66,7 +67,7 @@ async function atualizarPort(dir, info, progresso) {
 
 // ---- launcher (e as correções do port, que vêm no mesmo Release: mhgurecomp-<versão>-licasN.exe)
 async function verLauncher(dir) {
-  const rel = await release(LAUNCHER); if (!rel) return { nenhum: true };
+  const rel = (await release(LAUNCHER)) || (await release(LAUNCHER_ANTIGO)); if (!rel) return { nenhum: true };
   const atual = app.getVersion();
   const asset = rel.assets.find(a => WIN ? /windows\.exe$/i.test(a.name) : /linux\.AppImage$/i.test(a.name));
   let base = null, licas = 0; try { base = fs.readFileSync(path.join(dir, "versao_port.txt"), "utf8").trim(); } catch {}
@@ -97,4 +98,4 @@ async function atualizarLauncher(info, progresso) {
   return atual;
 }
 
-module.exports = { verPort, atualizarPort, verLauncher, aplicarCorrecao, atualizarLauncher };
+module.exports = { verPort, atualizarPort, verLauncher, aplicarCorrecao, atualizarLauncher, release, baixar, maior };

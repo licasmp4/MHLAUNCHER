@@ -12,6 +12,7 @@ function salvarConfig(c) { fs.mkdirSync(path.dirname(configArq()), { recursive: 
 
 // a pasta do port: a escolhida antes, a do próprio launcher (portátil / AppImage) ou a de teste
 function pastaJogo() {
+  if (process.env.MHGU_DIR) return fs.existsSync(path.join(process.env.MHGU_DIR, EXE)) ? process.env.MHGU_DIR : null;  // (teste: só essa)
   const candidatos = [
     process.env.MHGU_DIR,
     config().pastaJogo,

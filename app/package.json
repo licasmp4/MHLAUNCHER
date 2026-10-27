@@ -1,8 +1,8 @@
 {
   "name": "mhgu-launcher",
-  "productName": "MHGU Launcher",
-  "version": "3.1.0",
-  "description": "Launcher do Monster Hunter Generations Ultimate no PC (MHGURecomp), em português. Feito por licas.mp3.",
+  "productName": "MHLAUNCHER",
+  "version": "3.2.0",
+  "description": "MHLAUNCHER: a central dos ports de Monster Hunter no PC (Generations Ultimate, 4 Ultimate, Freedom Unite), em português. Feito por licas.mp3.",
   "author": {
     "name": "licas.mp3",
     "email": "licasmp4@users.noreply.github.com"
@@ -26,7 +26,7 @@
   },
   "build": {
     "appId": "com.licas.mhgulauncher",
-    "productName": "MHGU Launcher",
+    "productName": "MHLAUNCHER",
     "copyright": "feito por licas.mp3",
     "directories": {
       "output": "dist",
@@ -48,10 +48,10 @@
           ]
         }
       ],
-      "artifactName": "MHGU-Launcher-${version}-windows.exe"
+      "artifactName": "MHLAUNCHER-${version}-windows.exe"
     },
     "portable": {
-      "artifactName": "MHGU-Launcher-${version}-windows.exe"
+      "artifactName": "MHLAUNCHER-${version}-windows.exe"
     },
     "linux": {
       "target": [
@@ -69,7 +69,7 @@
         }
       ],
       "category": "Game",
-      "artifactName": "MHGU-Launcher-${version}-linux.${ext}",
+      "artifactName": "MHLAUNCHER-${version}-linux.${ext}",
       "maintainer": "licas.mp3 <licasmp4@users.noreply.github.com>"
     }
   }

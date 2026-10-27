@@ -1,0 +1,78 @@
+// Biblioteca do MHLAUNCHER: os outros ports de Monster Hunter, instalados e atualizados pelos Releases de cada
+// projeto. Cada um tem o launcher próprio (é ele que pede os arquivos do jogo e prepara tudo); aqui ficam só baixar,
+// atualizar e abrir. O Generations Ultimate não está aqui: ele tem o launcher inteiro (as outras abas).
+const fs = require("fs"), path = require("path"), os = require("os");
+const { spawn, execFileSync } = require("child_process");
+const AdmZip = require("adm-zip");
+const atualiza = require("./atualiza");
+const jogo = require("./jogo");
+const WIN = process.platform === "win32";
+
+const JOGOS = {
+  mh4u: {
+    repo: "CompaLarios18/MH4UltimateDC", pasta: "MH4U",
+    asset: WIN ? /windows\.zip$/i : /linux\.tar\.gz$/i,
+    exe: WIN ? ["mh4u.exe"] : ["mh4u", "mh4u.sh"],
+  },
+  mhfu: {
+    repo: "Mango77x/MHForever", pasta: "MHFU",
+    asset: WIN ? /windows-x64\.zip$/i : /linux-x64\.tar\.gz$/i,
+    exe: WIN ? ["MHForever.exe"] : ["MHForever", "mhforever"],
+  },
+};
+const VERSAO = ".mhlauncher-versao";
+
+const pastaDe = id => (jogo.config().jogos || {})[id] || path.join(os.homedir(), "MHLAUNCHER", JOGOS[id].pasta);
+function definirPasta(id, p) { const c = jogo.config(); c.jogos = c.jogos || {}; c.jogos[id] = p; jogo.salvarConfig(c); }
+const exeDe = (id, dir) => JOGOS[id].exe.map(n => path.join(dir, n)).find(f => fs.existsSync(f)) || null;
+const lerVersao = dir => { try { return fs.readFileSync(path.join(dir, VERSAO), "utf8").trim(); } catch { return null; } };
+
+// o que está instalado (sem internet)
+function estado() {
+  const r = {};
+  for (const id in JOGOS) { const dir = pastaDe(id), exe = exeDe(id, dir); r[id] = { pasta: dir, instalado: !!exe, versao: exe ? lerVersao(dir) : null }; }
+  return r;
+}
+
+// a versão mais nova de cada um (com internet); nova = instalado e desatualizado
+async function procurar() {
+  const est = estado(), r = {};
+  await Promise.all(Object.keys(JOGOS).map(async id => {
+    try {
+      const rel = await atualiza.release(JOGOS[id].repo), a = rel && rel.assets.find(x => JOGOS[id].asset.test(x.name));
+      r[id] = { ...est[id], ultima: rel ? rel.tag_name : null, url: a ? a.browser_download_url : null, tamanho: a ? a.size : 0,
+        nova: !!(a && est[id].instalado && (!est[id].versao || est[id].versao !== rel.tag_name)) };
+    } catch (e) { r[id] = { ...est[id], erro: String(e.message || e) }; }
+  }));
+  return r;
+}
+
+// baixa o pacote do Release e põe na pasta do jogo. Os pacotes vêm com uma pasta só dentro: o conteúdo dela vai para
+// a pasta do jogo, por cima (as configurações e os saves desses ports ficam fora da pasta, em AppData / Documentos).
+async function instalar(id, progresso) {
+  const info = (await procurar())[id];
+  if (!info || !info.url) throw new Error("não achei o pacote para " + (WIN ? "Windows" : "Linux") + " no GitHub do projeto");
+  const dir = pastaDe(id), tmp = fs.mkdtempSync(path.join(os.tmpdir(), "mhlauncher-")), arq = path.join(tmp, WIN ? "p.zip" : "p.tar.gz"), x = path.join(tmp, "x");
+  try {
+    await atualiza.baixar(info.url, arq, progresso);
+    fs.mkdirSync(x);
+    if (WIN) new AdmZip(arq).extractAllTo(x, true); else execFileSync("tar", ["-xzf", arq, "-C", x]);
+    let raiz = x; const dentro = fs.readdirSync(x);
+    if (dentro.length === 1 && fs.statSync(path.join(x, dentro[0])).isDirectory()) raiz = path.join(x, dentro[0]);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.cpSync(raiz, dir, { recursive: true, force: true });
+    if (!WIN) for (const n of JOGOS[id].exe) { const f = path.join(dir, n); if (fs.existsSync(f)) fs.chmodSync(f, 0o755); }
+    if (!exeDe(id, dir)) throw new Error("o pacote não tem o " + JOGOS[id].exe[0]);
+    fs.writeFileSync(path.join(dir, VERSAO), info.ultima);
+    return estado()[id];
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+
+function abrir(id) {
+  const dir = pastaDe(id), exe = exeDe(id, dir);
+  if (!exe) return { erro: "Instale primeiro." };
+  spawn(exe, [], { cwd: dir, detached: true, stdio: "ignore" }).unref();
+  return { ok: true };
+}
+
+module.exports = { JOGOS, estado, procurar, instalar, abrir, pastaDe, definirPasta };
