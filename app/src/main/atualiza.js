@@ -42,6 +42,13 @@ async function atualizarPort(dir, info, progresso) {
     const acha = d => { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, f.name); if (f.isFile() && /^mhgurecomp(\.exe)?$/.test(f.name)) return d; if (f.isDirectory()) { const r = acha(p); if (r) return r; } } return null; };
     const raiz = acha(path.join(tmp, "x")); if (!raiz) throw new Error("o zip não tem o mhgurecomp");
     const ant = path.join(dir, "port_anterior"); let n = 0;
+    // DLLs da versão antiga que a nova não traz (a 0.10 juntou dezenas numa só): vão para port_anterior, porque
+    // uma DLL velha com o mesmo nome de uma do sistema pode ser carregada no lugar da certa
+    const novas = new Set(fs.readdirSync(raiz).map(n => n.toLowerCase()));
+    for (const f of fs.readdirSync(dir)) {
+      if (!/\.dll$/i.test(f) || novas.has(f.toLowerCase())) continue;
+      fs.mkdirSync(ant, { recursive: true }); fs.renameSync(path.join(dir, f), path.join(ant, f)); n++;
+    }
     for (const f of fs.readdirSync(raiz, { withFileTypes: true })) {
       if (!f.isFile() || f.name === "mhgurecomp.ini") continue;
       const de = path.join(raiz, f.name), para = path.join(dir, f.name);
