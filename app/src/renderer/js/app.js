@@ -7,6 +7,7 @@
   // sem o Generations Ultimate instalado o launcher abre na biblioteca (os outros ports funcionam sem ele) e as abas
   // dele somem; o cartão dele na biblioteca explica como instalar
   const temGU = !!est.pasta;
+  Floresta.ligar($("#fundo"));
   if (!temGU) $$("[data-gu]").forEach(e => e.hidden = true);
 
   // ---- páginas: a primeira já aparece, as outras montam logo depois (abrir fica rápido)
@@ -14,14 +15,15 @@
   const montadas = {};
   async function montar(p) { if (montadas[p]) return montadas[p]; montadas[p] = (async () => { const c = $("#pg-" + p + " .conteudo"); try { await Paginas[p].montar(c); } catch (e) { console.error(p, e); c.append(el("div", { class: "aviso" }, el("div", { class: "t" }, el("b", {}, "Algo deu errado nesta página"), el("span", {}, String(e.message || e))))); } numerar(c); })(); return montadas[p]; }
 
-  // ---- menu: a seleção corre até a aba escolhida (com uma esticadinha no caminho)
+  // ---- menu de abas: a seleção corre até a aba escolhida (com uma esticadinha no caminho)
   const marca = $("#marcaNav"), nav = $("#nav");
   function moverMarca(btn, animar) {
-    const y = btn.offsetTop;
-    marca.style.setProperty("--de", "translateY(" + y + "px)");
-    if (!animar) { marca.style.transition = "none"; marca.style.transform = "translateY(" + y + "px)"; marca.offsetHeight; marca.style.transition = ""; return; }
+    const x = btn.offsetLeft, w = btn.offsetWidth;
+    marca.style.setProperty("--de", "translateX(" + x + "px)");
+    btn.scrollIntoView({ block: "nearest", inline: "nearest", behavior: animar ? "smooth" : "auto" });
+    if (!animar) { marca.style.transition = "none"; marca.style.width = w + "px"; marca.style.transform = "translateX(" + x + "px)"; marca.offsetHeight; marca.style.transition = ""; return; }
     marca.classList.remove("estica"); void marca.offsetWidth; marca.classList.add("estica");
-    marca.style.transform = "translateY(" + y + "px)";
+    marca.style.width = w + "px"; marca.style.transform = "translateX(" + x + "px)";
   }
   async function ir(p, animar = true) {
     const btn = $('nav button[data-p="' + p + '"]'); if (!btn) return;
@@ -30,6 +32,7 @@
     moverMarca(btn, animar);
     await montar(p);
     $$(".pagina").forEach(s => s.classList.toggle("ativa", s.id === "pg-" + p));
+    if (animar) TrocaPixel.cobrir($("#paginas"));
     const pg = $("#pg-" + p); pg.scrollTop = 0;
     // a cena do Início só toca com o Início na tela
     Cenas.visivel(p === "inicio" && !document.hidden);

@@ -33,7 +33,7 @@ html, body { -webkit-font-smoothing: none; }
 .secao { font: 400 10px/1.6 var(--rotulo); letter-spacing: .12em; text-transform: uppercase; color: #aa9e7e; }
 .secao::before { width: 8px; height: 8px; box-shadow: 2px 2px 0 #4a1c10; }
 .secao .acao { font-family: var(--sans); }
-nav h6, .teclado .tgrupo, .lib-info .olho, .lib-info .precisa b, .lib-item small { font-family: var(--rotulo) !important; font-weight: 400 !important; font-size: 8px !important; letter-spacing: .12em !important; }
+.teclado .tgrupo, .lib-info .olho, .lib-info .precisa b, .lib-item small { font-family: var(--rotulo) !important; font-weight: 400 !important; font-size: 8px !important; letter-spacing: .12em !important; }
 .opcao .nome, .jogo h4, .lib-item .rot { font-weight: 400; }
 .divisoria s { background: var(--musgo); height: 2px; }
 
@@ -70,7 +70,8 @@ nav h6, .teclado .tgrupo, .lib-info .olho, .lib-info .precisa b, .lib-item small
 /* menu: a aba ativa ganha borda brasa e a faixa da esquerda */
 nav button { border: 2px solid transparent; font-family: var(--sans); font-weight: 600; }
 nav button.on { color: #f3ead2; font-weight: 600; }
-.marca-nav { background: var(--brasa-suave) !important; border: 2px solid var(--brasa) !important; box-shadow: inset 3px 0 0 #ff6a3d !important; }
+.marca-nav { background: var(--brasa-suave) !important; border: 2px solid var(--brasa) !important; box-shadow: inset 0 -3px 0 #ff6a3d !important; }
+.marca-nav::before { display: none; }
 nav button.on svg { color: var(--brasa2); }
 
 /* controles */
@@ -108,12 +109,20 @@ nav button.on .ic-px { color: var(--brasa2); }
 @media (prefers-reduced-motion: reduce) { .btn:hover { animation: none; } nav button:hover .ic-inicio, nav button.on .ic-inicio { animation: none; -webkit-mask-position: -32px 0; mask-position: -32px 0; } }
 
 /* fundo e barra lateral em floresta (no app.css eles têm o couro escrito direto) */
-#lado { background: #0b130e !important; border-right: 2px solid var(--linha2) !important; }
+#topo { background: #0b130e !important; border-bottom: 2px solid var(--linha2) !important; }
 #fundo::after { background: radial-gradient(120% 90% at 60% 20%, rgba(9, 15, 11, .4), rgba(9, 15, 11, .93) 70%), linear-gradient(rgba(9, 15, 11, .45), rgba(9, 15, 11, .75)) !important; }
 #fundo img.on { opacity: .3; filter: blur(34px) saturate(.8) hue-rotate(-12deg); }
 #grao { opacity: .25; }
-nav h6 { text-transform: uppercase; color: #879477 !important; margin-top: 16px; }
-.pe .btn.primario { font: 400 17px var(--display) !important; }
+nav h6 { background: var(--linha3); }
+#jogar { box-shadow: 4px 4px 0 #5b2419 !important; }
+#jogar:active { box-shadow: none !important; }
 .mini .t { line-height: 1.3; }
 .mini .t b { font-weight: 600; }
 .mini .prog, .mini .prog i { height: 2px; }
+
+/* a floresta em pixel no fundo (js/floresta.js) no lugar da cena desfocada, e a troca de aba em blocos */
+#fundo img { display: none; }
+#floresta { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+#fundo::after { background: linear-gradient(180deg, rgba(9, 15, 11, .55), rgba(9, 15, 11, .25) 45%, rgba(9, 15, 11, .15)) !important; }
+#grao { opacity: .12; }
+#troca-pixel { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; image-rendering: pixelated; }
