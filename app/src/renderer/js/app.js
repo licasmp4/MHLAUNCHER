@@ -106,6 +106,30 @@
   const brilho = () => { jogar.classList.remove("brilha"); void jogar.offsetWidth; jogar.classList.add("brilha"); setTimeout(brilho, 6000 + Math.random() * 5000); };
   setTimeout(brilho, 2500);
 
+  // ---- aviso de atualização: procura ao abrir e a cada 30 min (o launcher, o port oficial e as correções). Cada
+  // novidade avisa uma vez: um aviso no Início, uma bolinha na aba Sobre e, com a janela escondida ou minimizada
+  // (durante o jogo, por exemplo), uma notificação do sistema.
+  const avisadas = new Set();
+  async function procurarAtualizacoes() {
+    const novas = [];
+    try { const r = await api.atualizaLauncher(); if (r && r.nova) novas.push({ k: "l" + r.ultima, t: "launcher v" + r.ultima }); if (r && r.correcao) novas.push({ k: "c" + r.correcao.nome, t: "correções do port " + r.correcao.nome }); } catch {}
+    try { const p = await api.atualizaPort(); if (p && p.nova) novas.push({ k: "p" + p.ultima, t: "port " + p.ultima }); } catch {}
+    $('nav button[data-p="sobre"]').classList.toggle("tem-novo", novas.length > 0);
+    const agora = novas.filter(n => !avisadas.has(n.k));
+    if (!agora.length) return;
+    agora.forEach(n => avisadas.add(n.k));
+    const txt = agora.map(n => n.t).join(" · ");
+    $$(".aviso.atualizacao").forEach(a => a.remove());
+    const a = aviso("Atualização disponível", "Nova versão: " + txt + ". Leva um minuto e não mexe no seu save.", botao("Ver e atualizar", () => ir("sobre"), "primario", "baixar"), true);
+    a.classList.add("atualizacao"); Paginas.inicio.avisos.prepend(a);
+    toast("Atualização disponível: " + txt);
+    if (document.hidden || !document.hasFocus())
+      try { const n = new Notification("MHGU Launcher: atualização disponível", { body: "Nova versão: " + txt + ". Clique para ver." }); n.onclick = () => { api.janela("mostrar"); ir("sobre"); }; } catch {}
+    if (Paginas.sobre.reverificar) Paginas.sobre.reverificar();
+  }
+  setTimeout(procurarAtualizacoes, 6000);
+  setInterval(procurarAtualizacoes, 30 * 60 * 1000);
+
   const nov = await api.novidades();
   if (nov) Paginas.inicio.avisos.prepend(aviso("Atualizado para a v" + nov.versao, nov.notas.split(/\r?\n/).filter(Boolean).slice(0, 4).join(" · "), botao("Entendi", e => e.target.closest(".aviso").remove(), "peq"), true));
 })();

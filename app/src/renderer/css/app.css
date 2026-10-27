@@ -250,3 +250,8 @@ nav button[data-p=sobre]:hover svg, nav button[data-p=sobre].pulo svg { animatio
 [data-so="win32"] #barra .janela { display: none; }
 [data-so="win32"] #barra { padding-right: 138px; }
 .mini .t span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* atualização disponível: bolinha na aba Sobre */
+nav button.tem-novo::after { content: ""; position: absolute; right: 12px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--brasa2); box-shadow: 0 0 0 0 rgba(239, 122, 89, .55); animation: novo 2s var(--suave) infinite; }
+@keyframes novo { 70% { box-shadow: 0 0 0 7px rgba(239, 122, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 122, 89, 0); } }
+@media (prefers-reduced-motion: reduce) { nav button.tem-novo::after { animation: none; } }

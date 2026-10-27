@@ -163,13 +163,14 @@ function registrar() {
   h("cache:ler", nome => fs.existsSync(path.join(pastaCache(), nome)) ? "mhgu://app/_cache/" + encodeURIComponent(nome) : null);
   h("cache:salvar", (nome, dataUrl) => { fs.writeFileSync(path.join(pastaCache(), nome), nativeImage.createFromDataURL(dataUrl).toJPEG(88)); return "mhgu://app/_cache/" + encodeURIComponent(nome); });
 
-  h("janela", acao => { if (acao === "min") win.minimize(); else if (acao === "max") win.isMaximized() ? win.unmaximize() : win.maximize(); else if (acao === "fechar") win.close(); });
+  h("janela", acao => { if (acao === "min") win.minimize(); else if (acao === "max") win.isMaximized() ? win.unmaximize() : win.maximize(); else if (acao === "fechar") win.close(); else if (acao === "mostrar") { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
 }
 
 // uma janela só: abrir de novo traz a que já está aberta para a frente
 if (!printsDir && !app.requestSingleInstanceLock()) app.quit();
 app.on("second-instance", () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
 
+if (process.platform === "win32") app.setAppUserModelId("com.licas.mhgulauncher");  // (notificações do Windows com o nome certo)
 app.whenReady().then(async () => {
   carregarIni();
   servir();

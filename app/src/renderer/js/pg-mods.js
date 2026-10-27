@@ -30,7 +30,6 @@ Paginas.sobre = {
         else {
           lTxt.textContent = "Nova versão: v" + r.ultima; lTxt.style.color = "var(--brasa2)"; lBtn.textContent = "Atualizar para v" + r.ultima; lBtn.classList.add("primario");
           lBtn.onclick = async () => { lBtn.disabled = true; try { await api.atualizaLauncherAplicar(r); } catch (e) { toast(String(e.message || e)); lBtn.disabled = false; } };
-          Paginas.inicio.avisos && Paginas.inicio.avisos.prepend(aviso("Nova versão do launcher: v" + r.ultima, (r.notas.split(/\r?\n/).map(l => l.replace(/^[-*#\s]+/, "")).find(Boolean) || "") , botao("Atualizar", lBtn.onclick, "primario"), true));
         }
         if (r.correcao) pintaCorrecao(r.correcao);
       } catch { lTxt.textContent = "Sem internet agora."; }
@@ -50,6 +49,7 @@ Paginas.sobre = {
     }
     api.aoProgresso(({ tipo, p }) => { const b = tipo === "launcher" ? lBtn : pBtn; b.textContent = "Baixando " + p + "%"; });
     verLauncher().then(verPort);
+    Paginas.sobre.reverificar = () => verLauncher().then(verPort);
 
     const cenas = (await api.configGet("cenas")) !== false;
     c.append(cabecalho("sobre", "Sobre", "Quem fez cada parte, atualizações e pastas.", [9, 169], "sobe"),
