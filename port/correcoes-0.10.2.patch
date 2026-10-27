@@ -1,0 +1,332 @@
+diff --git a/runtime/config.c b/runtime/config.c
+index d9f290d..db5fc0e 100644
+--- a/runtime/config.c
++++ b/runtime/config.c
+@@ -121,6 +121,36 @@ static const char DEFAULT_INI[] =
+     "; Default: 1.0\n"
+     "MouseSensitivity = 1.0\n"
+     "\n"
++    "[Keyboard]\n"
++    "; What presses each controller button: keys by name (A, Space, Left Shift, Tab, Return, Up, Keypad 1, F1...),\n"
++    "; mouse buttons (Mouse Left, Mouse Right, Mouse Middle, Mouse 4, Mouse 5) and the wheel (Wheel Up, Wheel Down);\n"
++    "; several separated by commas, None for nothing. Esc (lets the mouse go) and F7-F12 (screenshots) are taken.\n"
++    "; Moving the mouse turns the camera (the right stick). ItemPrev / ItemNext scroll the item bar (they hold L and\n"
++    "; press Y / A, as on the controller). The buttons are the Switch's: A confirms, B cancels and rolls.\n"
++    "A = Mouse Right\n"
++    "B = Space\n"
++    "X = Mouse Left\n"
++    "Y = R\n"
++    "L = Q, Mouse Middle\n"
++    "R = E\n"
++    "ZL = Tab\n"
++    "ZR = T\n"
++    "Plus = Return, Keypad Enter\n"
++    "Minus = Backspace\n"
++    "DpadUp = Up\n"
++    "DpadDown = Down\n"
++    "DpadLeft = Left\n"
++    "DpadRight = Right\n"
++    "LStick = Left Ctrl, Right Ctrl\n"
++    "RStick = Left Alt, Right Alt\n"
++    "MoveForward = W\n"
++    "MoveBack = S\n"
++    "MoveLeft = A\n"
++    "MoveRight = D\n"
++    "Walk = Left Shift\n"
++    "ItemPrev = Wheel Up\n"
++    "ItemNext = Wheel Down\n"
++    "\n"
+     "[Multiplayer]\n"
+     "; Which port to host/join hubs on (TCP and UDP)\n"
+     "; Default: 39500\n"
+@@ -254,6 +284,52 @@ static bool parse_fsr_quality(const char *v, int *out) {
+ static int desktop_w, desktop_h;
+ static bool render_auto = true;
+ 
++// [Keyboard]: the setting names, in ACT_* / BTN_* order
++static const char *const bind_names[ACT_COUNT] = {
++    "a", "b", "x", "y", "lstick", "rstick", "l", "r", "zl", "zr", "plus", "minus", "dpadleft", "dpadup", "dpadright",
++    "dpaddown", "moveforward", "moveback", "moveleft", "moveright", "walk", "itemprev", "itemnext"};
++static bool bind_set[ACT_COUNT];
++
++// One input by name: a key (SDL's names, any case), a mouse button or a wheel direction. 0: unknown or taken.
++static int parse_input(const char *name) {
++    char n[64];
++    snprintf(n, sizeof n, "%s", name);
++    squash(n);
++    static const struct { const char *name; int in; } extra[] = {
++        {"mouseleft", IN_MOUSE(1)}, {"mouse1", IN_MOUSE(1)}, {"mousemiddle", IN_MOUSE(2)}, {"mouse3", IN_MOUSE(2)},
++        {"mouseright", IN_MOUSE(3)}, {"mouse2", IN_MOUSE(3)}, {"mouse4", IN_MOUSE(4)}, {"mouse5", IN_MOUSE(5)},
++        {"wheelup", IN_WHEEL_UP}, {"wheeldown", IN_WHEEL_DOWN},
++        {"enter", SDL_SCANCODE_RETURN}, {"shift", SDL_SCANCODE_LSHIFT}, {"ctrl", SDL_SCANCODE_LCTRL},
++        {"control", SDL_SCANCODE_LCTRL}, {"alt", SDL_SCANCODE_LALT}};
++    for (unsigned i = 0; i < sizeof extra / sizeof *extra; i++)
++        if (!strcmp(n, extra[i].name)) return extra[i].in;
++    SDL_Scancode sc = SDL_GetScancodeFromName(name);
++    if (sc == SDL_SCANCODE_ESCAPE || (sc >= SDL_SCANCODE_F7 && sc <= SDL_SCANCODE_F12)) return 0;  // (taken: Esc, F7-F12)
++    return sc > SDL_SCANCODE_UNKNOWN && sc < SDL_SCANCODE_COUNT ? (int)sc : 0;
++}
++
++// "Q, Mouse Middle" -> the action's inputs. False (nothing changed) when a name is unknown.
++static bool parse_binds(int act, const char *v, int line) {
++    uint16_t in[BIND_MAX] = {0};
++    int n = 0;
++    char buf[256];
++    snprintf(buf, sizeof buf, "%s", v);
++    for (char *p = strtok(buf, ","); p; p = strtok(NULL, ",")) {
++        while (isspace((unsigned char)*p)) p++;
++        char *e = p + strlen(p);
++        while (e > p && isspace((unsigned char)e[-1])) *--e = 0;
++        if (!*p || !SDL_strcasecmp(p, "none")) continue;
++        int x = parse_input(p);
++        if (!x) { LOG("[config] line %d: \"%s\" is not a key or mouse button (or is taken)\n", line, p); return false; }
++        if (n < BIND_MAX) in[n++] = (uint16_t)x;
++    }
++    memcpy(g_config.binds[act], in, sizeof in);
++    bind_set[act] = true;
++    return true;
++}
++
++static char *trim(char *s);
++
+ static void set_key(const char *key, char *val, int line) {
+     char k[64], v[256];
+     snprintf(k, sizeof k, "%s", key);
+@@ -261,6 +337,11 @@ static void set_key(const char *key, char *val, int line) {
+     squash(k);
+     squash(v);
+     bool ok = true;
++    for (int i = 0; i < ACT_COUNT; i++)
++        if (!strcmp(k, bind_names[i])) {
++            if (!parse_binds(i, val, line)) LOG("[config] line %d: %s keeps its default keys\n", line, key);
++            return;
++        }
+     if (!strcmp(k, "mode")) {
+         if (!strcmp(v, "fullscreen") || !strcmp(v, "exclusive") || !strcmp(v, "exclusivefullscreen"))
+             g_config.display_mode = DISPLAY_FULLSCREEN;
+@@ -452,6 +533,25 @@ void config_load(void) {
+         append_missing_sections(path, seen);
+     }
+ 
++    // [Keyboard] actions the file leaves out (an older file, a deleted line): DEFAULT_INI's keys
++    for (const char *p = strstr(DEFAULT_INI, "[Keyboard]\n"); p && *p && strncmp(p, "\n[", 2);) {
++        const char *nl = strchr(p, '\n');
++        if (!nl) break;
++        char l[256];
++        snprintf(l, sizeof l, "%.*s", (int)(nl - p), p);
++        p = nl;
++        if (p[1] == '[') break;
++        p++;
++        char *eq = strchr(l, '=');
++        if (*l == ';' || *l == '[' || !eq) continue;
++        *eq = 0;
++        char k[64];
++        snprintf(k, sizeof k, "%s", trim(l));
++        squash(k);
++        for (int i = 0; i < ACT_COUNT; i++)
++            if (!strcmp(k, bind_names[i]) && !bind_set[i]) parse_binds(i, trim(eq + 1), 0);
++    }
++
+     const SDL_DisplayMode *dm = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay());
+     desktop_w = dm ? dm->w : 1920, desktop_h = dm ? dm->h : 1080;
+     if (!g_config.width) g_config.width = desktop_w, g_config.height = desktop_h;
+diff --git a/runtime/config.h b/runtime/config.h
+index 2f039a6..7370a74 100644
+--- a/runtime/config.h
++++ b/runtime/config.h
+@@ -5,6 +5,16 @@
+ enum { DISPLAY_WINDOWED, DISPLAY_FULLSCREEN, DISPLAY_BORDERLESS };
+ enum { FACE_POSITION, FACE_LABEL };
+ 
++// [Keyboard]: what presses each controller button (runtime/host_input.c). Actions 0-15 are the buttons (BTN_*,
++// hle/input.h), then the left stick's four directions, walking (half tilt) and the item bar's two directions.
++enum { ACT_MOVE_UP = 16, ACT_MOVE_DOWN, ACT_MOVE_LEFT, ACT_MOVE_RIGHT, ACT_WALK, ACT_ITEM_PREV, ACT_ITEM_NEXT, ACT_COUNT };
++// Inputs: a keyboard scancode (SDL_Scancode, below 512), a mouse button or a wheel direction.
++#define IN_MOUSE(n) (512 + (n))  // n: SDL_BUTTON_LEFT (1) .. SDL_BUTTON_X2 (5)
++#define IN_WHEEL_UP 520
++#define IN_WHEEL_DOWN 521
++#define IN_COUNT 522
++#define BIND_MAX 4
++
+ // [Monster HP]: factors on the HP multiplier of Hub-type quests' large monsters
+ #define HP_QUESTS_MAX 256
+ #define HP_SCALE_MIN 0.05f
+@@ -43,6 +53,7 @@ typedef struct {
+     float fsr_reactive;       // FSR: reactive mask strength on the game's moving-object mask, 0 (off) .. 1
+     int fsr_animsurf;         // FSR: surfaces animated through their texture (banners, water): 1 detected, 0 off
+     int fsr_upscaler;         // [Upscaler] Upscaler: FSR_UP_3 (FSR 3.1) or FSR_UP_4 (FSR 4, runtime/nvn/vulkan/fsr4.c)
++    uint16_t binds[ACT_COUNT][BIND_MAX];  // [Keyboard]: up to BIND_MAX inputs (IN_*, scancodes) each, 0 = none
+ } Config;
+ enum { UI_CENTER = 1, UI_21_9, UI_32_9, UI_EDGES };  // the middle 16:9, 21:9, 32:9, the picture's sides
+ enum { FSR_UP_3, FSR_UP_4 };  // [Upscaler] Upscaler
+diff --git a/runtime/host_input.c b/runtime/host_input.c
+index e64b96d..5881ab9 100644
+--- a/runtime/host_input.c
++++ b/runtime/host_input.c
+@@ -1,9 +1,10 @@
+ // Host controls -> the Switch controller the game reads (runtime/hle/input.c).
+ //
+-// Keyboard and mouse: WASD left stick (Left Shift held: half tilt, walking), mouse movement right stick (camera; click
+-//   in the window to capture the mouse, Esc releases it), left click = X, right click = A, Space = B, R = Y, Q = L,
+-//   E = R, Tab = ZL, T = ZR, Enter = Plus, Backspace = Minus, arrow keys = d-pad, Ctrl = left stick click, Alt = right
+-//   stick click. While the game shows a text entry (names, chat) the keyboard types instead
++// Keyboard and mouse: the settings' [Keyboard] keys (runtime/config.c; by default WASD left stick, Left Shift held
++//   half tilt (walking), left click = X, right click = A, Space = B, R = Y, Q / middle click = L, E = R, Tab = ZL,
++//   T = ZR, Enter = Plus, Backspace = Minus, arrow keys = d-pad, Ctrl / Alt = left / right stick click, the wheel
++//   scrolls the item bar). Mouse movement is the right stick (camera; click in the window to capture the mouse, Esc
++//   releases it). While the game shows a text entry (names, chat) the keyboard types instead
+ //   (runtime/textinput.c). F11 switches windowed <-> full screen, F12 saves a screenshot, Shift+F12 the next 8
+ //   frames (exact rendered pixels, run\shots\), F10 dumps every render pass of the next 2 frames (debug, slow), F9 toggles how colour clears are done (debug).
+ // Gamepad (SDL): face buttons by position as on a Switch controller (the bottom one is B), or by their labels
+@@ -29,17 +30,29 @@
+ 
+ #define B(x) (1ull << (x))
+ 
+-static bool keys[SDL_SCANCODE_COUNT];
++// Inputs held now: keyboard scancodes, then the mouse buttons (IN_MOUSE, config.h). The wheel has no "held": each
++// notch holds its input for WHEEL_HOLD_NS.
++static bool keys[IN_COUNT];
+ static SDL_Gamepad *pad;
++#define WHEEL_HOLD_NS 90000000ull
++static uint64_t wheel_until[2];  // IN_WHEEL_UP, IN_WHEEL_DOWN
+ 
+-static const struct { SDL_Scancode sc; int btn; } key_buttons[] = {
+-    {SDL_SCANCODE_SPACE, BTN_B}, {SDL_SCANCODE_R, BTN_Y},
+-    {SDL_SCANCODE_Q, BTN_L}, {SDL_SCANCODE_E, BTN_R}, {SDL_SCANCODE_TAB, BTN_ZL}, {SDL_SCANCODE_T, BTN_ZR},
+-    {SDL_SCANCODE_RETURN, BTN_PLUS}, {SDL_SCANCODE_KP_ENTER, BTN_PLUS}, {SDL_SCANCODE_BACKSPACE, BTN_MINUS},
+-    {SDL_SCANCODE_UP, BTN_UP}, {SDL_SCANCODE_LEFT, BTN_LEFT}, {SDL_SCANCODE_DOWN, BTN_DOWN}, {SDL_SCANCODE_RIGHT, BTN_RIGHT},
+-    {SDL_SCANCODE_LCTRL, BTN_LSTICK}, {SDL_SCANCODE_RCTRL, BTN_LSTICK},
+-    {SDL_SCANCODE_LALT, BTN_RSTICK}, {SDL_SCANCODE_RALT, BTN_RSTICK},
+-};
++static bool input_down(int in, uint64_t now) {
++    if (in == IN_WHEEL_UP || in == IN_WHEEL_DOWN) return now < wheel_until[in - IN_WHEEL_UP];
++    return in > 0 && in < IN_COUNT && keys[in];
++}
++static bool action_down(int act, uint64_t now) {
++    for (int i = 0; i < BIND_MAX; i++)
++        if (input_down(g_config.binds[act][i], now)) return true;
++    return false;
++}
++
++// The item bar is scrolled by L + Y (back) or L + A (on), as on the controller: L first, the face button a moment
++// later, both let go together, so the game sees a combination and not a camera reset (L alone).
++#define ITEM_L_NS 40000000ull      // L held alone first
++#define ITEM_PRESS_NS 70000000ull  // then Y / A with it
++static uint64_t item_start;
++static int item_btn = -1;
+ 
+ // ---- mouse: captured (relative mode) after a click in the window, Esc lets it go. Its movement is the right stick:
+ // the speed it moves at, smoothed over a few milliseconds, as the stick's tilt (full tilt at MOUSE_FULL_SPEED counts a
+@@ -53,7 +66,6 @@ static bool mouse_grab;       // the player's choice: clicked in (true) or Esc /
+ static bool mouse_captured;   // relative mode on now (grabbed, and no Forge menu open)
+ static bool mouse_no_capture; // relative mode refused (WSLg, some Wayland compositors): clicks are buttons, no mouse look
+ static float mouse_dx, mouse_dy;  // counts moved since the last update
+-static uint64_t mouse_buttons;
+ // (tests: the control file's "mousemove <x> <y> <ms>", a mouse moving at that many counts a second, captured or not)
+ static float test_vx, test_vy;
+ static uint64_t test_until;
+@@ -411,21 +423,29 @@ void host_input_event(const SDL_Event *e) {
+         if (mouse_captured) mouse_dx += e->motion.xrel, mouse_dy += e->motion.yrel;
+         break;
+     case SDL_EVENT_MOUSE_BUTTON_DOWN: case SDL_EVENT_MOUSE_BUTTON_UP: {
+-        int btn = e->button.button == SDL_BUTTON_LEFT ? BTN_X : e->button.button == SDL_BUTTON_RIGHT ? BTN_A : -1;
+-        if (btn < 0) break;
++        int n = e->button.button;
++        if (n < SDL_BUTTON_LEFT || n > SDL_BUTTON_X2) break;
+         if (!e->button.down) {
+-            mouse_buttons &= ~B(btn);
++            keys[IN_MOUSE(n)] = false;
+         } else if (!mouse_captured && !mouse_no_capture) {  // (the click that captures the mouse is not a button press)
+             if (!mouse_grab) LOG("[input] capturing the mouse\n");
+             mouse_grab = true;
+         } else {
+-            mouse_buttons |= B(btn);
++            keys[IN_MOUSE(n)] = true;
+         }
+         break;
+     }
++    case SDL_EVENT_MOUSE_WHEEL:  // (only while the mouse is captured: over another window's edge it is not the game's)
++        if (mouse_captured || mouse_no_capture) {
++            float y = e->wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -e->wheel.y : e->wheel.y;
++            if (y > 0.0f) wheel_until[0] = plat_now_ns() + WHEEL_HOLD_NS;
++            if (y < 0.0f) wheel_until[1] = plat_now_ns() + WHEEL_HOLD_NS;
++        }
++        break;
+     case SDL_EVENT_WINDOW_FOCUS_LOST:
+         memset(keys, 0, sizeof keys);
+-        mouse_buttons = 0, mouse_grab = false;
++        wheel_until[0] = wheel_until[1] = 0;
++        mouse_grab = false;
+         break;
+     case SDL_EVENT_GAMEPAD_ADDED:
+         open_pad(e->gdevice.which);
+@@ -513,13 +533,28 @@ void host_input_update(void) {
+         memset(keys, 0, sizeof keys);  // (keys held when the entry opened are typing now, or released)
+     }
+ 
+-    for (unsigned i = 0; i < sizeof key_buttons / sizeof *key_buttons; i++)
+-        if (keys[key_buttons[i].sc]) b |= B(key_buttons[i].btn);
+-    int kx = keys[SDL_SCANCODE_D] - keys[SDL_SCANCODE_A], ky = keys[SDL_SCANCODE_W] - keys[SDL_SCANCODE_S];
+-    int k = keys[SDL_SCANCODE_LSHIFT] ? 16000 : 32767;
++    uint64_t now = plat_now_ns();
++    for (int i = 0; i <= BTN_DOWN; i++)
++        if (action_down(i, now)) b |= B(i);
++    int kx = action_down(ACT_MOVE_RIGHT, now) - action_down(ACT_MOVE_LEFT, now);
++    int ky = action_down(ACT_MOVE_UP, now) - action_down(ACT_MOVE_DOWN, now);
++    int k = action_down(ACT_WALK, now) ? 16000 : 32767;
+     if (kx && ky) k = k * 7071 / 10000;  // diagonals: same length as straight
+     lx += kx * k, ly += ky * k;
+-    b |= mouse_buttons;
++    static bool item_was[2];
++    for (int i = 0; i < 2; i++) {  // item bar: a new press starts L, then Y / A (see ITEM_L_NS)
++        bool d = action_down(ACT_ITEM_PREV + i, now);
++        if (d && !item_was[i] && now >= item_start + ITEM_L_NS + ITEM_PRESS_NS) item_start = now, item_btn = i ? BTN_A : BTN_Y;
++        item_was[i] = d;
++    }
++    if (item_btn >= 0) {
++        if (now < item_start + ITEM_L_NS + ITEM_PRESS_NS) {
++            b |= B(BTN_L);
++            if (now >= item_start + ITEM_L_NS) b |= B(item_btn);
++        } else {
++            item_btn = -1;
++        }
++    }
+     mouse_update(&rx, &ry);
+ 
+     if (pad) {
+@@ -597,7 +632,6 @@ void host_input_update(void) {
+     if (overlay_menu_open() != menu) {
+         menu = !menu;
+         memset(keys, 0, sizeof keys);  // (keys held as it opened went to the menu: nothing stays pressed)
+-        mouse_buttons = 0;
+     }
+     if (menu) {  // Forge's menu has the controller (as in Forge: A activates, B cancels, stick and d-pad move)
+         OverlayPad p = {b & B(BTN_A), b & B(BTN_B), b & B(BTN_X), b & B(BTN_Y), b & B(BTN_UP), b & B(BTN_DOWN),
+diff --git a/runtime/net/emsync.c b/runtime/net/emsync.c
+index 4927570..75b2873 100644
+--- a/runtime/net/emsync.c
++++ b/runtime/net/emsync.c
+@@ -148,10 +148,23 @@ void emsync_tick(void) {
+ 
+ // The patched entry of the per-monster receive (0x2cb120: r0 = monster, r2 = the message's parameters, byte 1 = the
+ // sender's slot). True: drop the message.
++// Only the movement kinds are filtered (byte 3 of the parameters: 1 = netEmAction, 2 = its follow-up): those are what
++// a master sends. Everything else (status, ailments, death / revival: kind 4 writes the state and calls the death
++// path) is what the original game already exchanges for small monsters without any master; dropping it on the
++// master's game lost the deaths and damage caused by the other players (a Jaggi killed by a follower stayed alive
++// for the master).
+ int emsync_filter(Cpu *c) {
+     if (!g_config.sync_small_monsters || g_area < 0) return 0;
+     uint32_t info;
+     if (!is_zako(c->r[0], &info)) return 0;
++    uint8_t kind = LD8(c->r[2] + 3);
++    if (kind != 1 && kind != 2) {
++        static uint32_t passed;
++        if ((passed++ & 63) == 0)
++            LOG("[emsync] small monster status message kind %u from slot %u passed (%u so far)\n", kind,
++                LD8(c->r[2] + 1), passed);
++        return 0;
++    }
+     if (g_master) return 1;  // (a moment of two masters: keep ours)
+     uint32_t spl = LD32(G_SPLAYER);
+     int sender = LD8(c->r[2] + 1);

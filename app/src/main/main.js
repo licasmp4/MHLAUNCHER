@@ -68,7 +68,7 @@ async function tirarPrints() {
   let n = 0;
   for (const p of ["jogos", "inicio", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"]) {
     win.webContents.send("nav", p);
-    await espera(2500);
+    await espera(3500);
     const sel = JSON.stringify("#pg-" + p);
     const { alto, tela } = await js(`(() => { const e = document.querySelector(${sel}); e.scrollTop = 0; return { alto: e.scrollHeight, tela: e.clientHeight }; })()`);
     const partes = Math.max(1, Math.ceil((alto - 8) / (tela * 0.85)));

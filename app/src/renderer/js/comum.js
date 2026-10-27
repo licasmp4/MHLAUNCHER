@@ -107,7 +107,9 @@ const divisoria = () => el("div", { class: "divisoria" }, el("i"), el("b"), el("
 function cabecalho(pagina, titulo, sub, cena, mov) {
   const fundo = el("div", { class: "cena" });
   const c = el("header", { class: "cabeca mov-" + mov }, fundo, el("div", { class: "titulo" }, el("h1", { class: "h1" }, titulo), divisoria(), el("p", { class: "sub" }, sub)));
-  if (cena) Cenas.quadro(cena[0], cena[1], 960, 540).then(u => { if (u) fundo.style.backgroundImage = "url('" + u + "')"; });
+  const px = typeof CenasPixel !== "undefined" && CenasPixel.criar(pagina);
+  if (px) { fundo.append(px); c.classList.add("com-px"); }
+  else if (cena) Cenas.quadro(cena[0], cena[1], 960, 540).then(u => { if (u) fundo.style.backgroundImage = "url('" + u + "')"; });
   // parallax: a cena se afasta um pouco do mouse
   const pg = () => c.closest(".pagina");
   setTimeout(() => pg() && pg().addEventListener("mousemove", e => { const r = c.getBoundingClientRect(); fundo.style.translate = ((e.clientX - r.left) / r.width - .5) * -18 + "px " + ((e.clientY - r.top) / r.height - .5) * -8 + "px"; }), 0);

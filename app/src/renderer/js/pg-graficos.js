@@ -72,6 +72,8 @@ Paginas.fps = {
   async montar(c) {
     const m = (await api.estado()).monitor;
     const fps = +(await ini.get("Performance", "FPS", "60")) || 60, vs = (await ini.get("Performance", "VSync", "On")) === "On";
+    CenasPixel.fps(fps);
+    ini.aoMudar((s, k) => { if (s === "Performance" && k === "FPS") ini.get("Performance", "FPS", "60").then(v => CenasPixel.fps(v)); });
     const dica = el("div", { class: "dica", style: { marginTop: "10px" } });
     let atual = fps, vsync = vs;
     const pintaDica = () => dica.textContent = vsync && atual > m.hz ? "Com VSync ligado o jogo não passa de " + m.hz + " FPS no seu monitor." : vsync && m.hz % atual ? "Dica: com VSync, um limite que divide " + m.hz + " (ex.: " + m.hz + " ou " + m.hz / 2 + ") fica mais liso." : "Boa escolha para o seu monitor.";

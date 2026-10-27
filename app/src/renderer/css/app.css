@@ -376,3 +376,53 @@ nav button.tem-novo::after { content: ""; position: absolute; right: 12px; top: 
 .slot small { display: block; font: 400 7px var(--rotulo, monospace); letter-spacing: .12em; text-transform: uppercase; color: var(--tx3); margin-bottom: 4px; }
 .slot b { font: 400 18px/1.15 var(--display); color: var(--tx); }
 @media (max-width: 1040px) { .acamp { grid-template-columns: minmax(0, 1fr); } .bolsa { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* cabeçalho das abas com a cena em pixel (js/cenas-pixel.js): sem o zoom da foto, o título à esquerda */
+.cabeca.com-px .cena { inset: 0; transform: none; background: #0a1510; }
+.cena-px { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.cabeca.com-px::after { background: linear-gradient(90deg, rgba(9, 15, 11, .92), rgba(9, 15, 11, .55) 40%, transparent 62%), linear-gradient(0deg, rgba(9, 15, 11, .6), transparent 45%) !important; }
+.cabeca.com-px .titulo { right: 45%; }
+
+/* Gráficos: os perfis viram pergaminhos pendurados, com bastão de madeira em cima e embaixo */
+#pg-graficos .opcao { background: var(--pergaminho, #c9bd98) !important; color: var(--tinta, #261d14) !important; border: 0 !important; margin: 10px 4px; box-shadow: 5px 5px 0 #050907 !important; }
+#pg-graficos .opcao::before, #pg-graficos .opcao::after { content: ""; position: absolute; left: -6px; right: -6px; height: 8px; background: #8a5a34; box-shadow: inset 0 -2px 0 #3b2414, 2px 2px 0 #050907; }
+#pg-graficos .opcao::before { top: -8px; } #pg-graficos .opcao::after { bottom: -8px; }
+#pg-graficos .opcao .nome { color: var(--tinta, #261d14); }
+#pg-graficos .opcao .info, #pg-graficos .opcao .medidor { color: #5c5240 !important; }
+#pg-graficos .opcao .medidor .trilho i { background: #a89f7d; }
+#pg-graficos .opcao .medidor .trilho i.on { background: var(--brasa); }
+#pg-graficos .opcao .medidor .trilho.leve i.on { background: #4f7a3c; }
+#pg-graficos .opcao.on { box-shadow: 0 0 0 3px var(--brasa), 6px 6px 0 #050907 !important; }
+#pg-graficos .opcao:hover { animation: pixelPulo .24s steps(3, end) forwards; }
+#pg-graficos .opcao .selo.brasa { background: var(--brasa); color: #fff6dc; border-color: #5b2419; transform: rotate(-6deg); box-shadow: 2px 2px 0 #5b2419; }
+
+/* Online: endereços e amigos como bilhetes pregados no quadro */
+#pg-online .ip { position: relative; background: var(--pergaminho, #c9bd98); color: var(--tinta, #261d14); padding: 12px 14px 12px 16px; margin: 10px 0; box-shadow: 4px 4px 0 #050907; border: 0 !important; }
+#pg-online .ip + .ip { border-top: 0 !important; }
+#pg-online .ip::before { content: ""; position: absolute; left: 50%; top: -5px; width: 8px; height: 8px; margin-left: -4px; background: var(--brasa); box-shadow: inset -2px -2px 0 #9a3a1e, 1px 1px 0 #000; }
+#pg-online .ip:nth-child(odd) { transform: rotate(-.4deg); } #pg-online .ip:nth-child(even) { transform: rotate(.4deg); }
+#pg-online .ip b, #pg-online .ip .valor { color: var(--tinta, #261d14) !important; }
+#pg-online .ip span, #pg-online .ip .dica, #pg-online .ip .info { color: #5c5240 !important; }
+#pg-online .ip svg { color: #9a3a1e; }
+#pg-online .ip .btn { background: #3b2414; border-color: #1a1008; color: #f3ead2; }
+
+/* Caçada: placas de ferro com rebites, como na forja */
+#pg-cacada .cartao { background: linear-gradient(180deg, #1c2620, #141c17) !important; border: 3px solid #3d4a40 !important; box-shadow: inset 0 0 0 2px #0b100d, 5px 5px 0 #050907 !important; }
+#pg-cacada .cartao::before { inset: 6px !important; --c: #6b7663 !important; background:
+  linear-gradient(var(--c), var(--c)) top left / 4px 4px no-repeat, linear-gradient(var(--c), var(--c)) top right / 4px 4px no-repeat,
+  linear-gradient(var(--c), var(--c)) bottom left / 4px 4px no-repeat, linear-gradient(var(--c), var(--c)) bottom right / 4px 4px no-repeat !important; }
+
+/* Mods e Cheats: cada mod é um item do inventário */
+#pg-mods .linha { background: #0d1510; border: 2px solid var(--linha2) !important; padding: 10px 12px; margin: 8px 0; box-shadow: 3px 3px 0 #050907; }
+#pg-mods .linha + .linha { border-top: 2px solid var(--linha2) !important; }
+#pg-mods .linha:hover { border-color: var(--musgo, #7f955c) !important; }
+#pg-mods .linha .chip-ic { background: #070c09 !important; box-shadow: inset 3px 3px 0 rgba(0, 0, 0, .55) !important; }
+
+/* Sobre: o livro da guilda, cada cartão uma página */
+#pg-sobre .cartao { background: var(--pergaminho, #c9bd98) !important; color: var(--tinta, #261d14); border: 0 !important; box-shadow: inset 6px 0 0 #a89f7d, 6px 6px 0 #050907 !important; }
+#pg-sobre .cartao .secao { color: #5c3a1e !important; }
+#pg-sobre .cartao .dica, #pg-sobre .cartao .linha .dica { color: #5c5240 !important; }
+#pg-sobre .cartao .rotulo, #pg-sobre .cartao b { color: var(--tinta, #261d14); }
+#pg-sobre .cartao .linha + .linha { border-top: 2px solid #a89f7d !important; }
+#pg-sobre .cartao .chip-ic { background: #b5aa86 !important; border-color: #8f8566 !important; color: #5c3a1e !important; }
+#pg-sobre .cartao .btn:not(.primario) { background: #3b2414; border-color: #1a1008; color: #f3ead2; }
