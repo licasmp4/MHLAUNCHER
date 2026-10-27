@@ -21,6 +21,22 @@ using System.Windows.Media.Imaging;
 [assembly: System.Reflection.AssemblyTitle("Instalador MHGU")]
 [assembly: System.Reflection.AssemblyProduct("MHGU pt-BR (licas.mp3)")]
 
+// Prioridade de tarefa de fundo: a extração lê e grava ~36 GB e, em prioridade normal, deixava o disco a 100% e
+// o PC inteiro travado. Em fundo o Windows atende primeiro os outros programas (disco e processador).
+static class Fundo
+{
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")] static extern IntPtr GetCurrentThread();
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")] static extern bool SetThreadPriority(IntPtr t, int p);
+    [System.Runtime.InteropServices.DllImport("ntdll.dll")] static extern int NtSetInformationProcess(IntPtr p, int classe, ref int valor, int tam);
+    const int THREAD_MODE_BACKGROUND_BEGIN = 0x00010000, ProcessIoPriority = 33, IO_BAIXA = 1;
+    public static void EstaThread() { try { SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN); } catch { } }
+    public static void Processo(Process p)
+    {
+        try { p.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { }
+        try { int v = IO_BAIXA; NtSetInformationProcess(p.Handle, ProcessIoPriority, ref v, 4); } catch { }
+    }
+}
+
 class App
 {
     [STAThread]
@@ -330,6 +346,7 @@ class Setup
 
         Task.Run(() =>
         {
+            Fundo.EstaThread();  // (cópias e downloads desta tarefa em prioridade de fundo)
             int etapa = 0;
             try
             {
@@ -500,9 +517,10 @@ class Setup
     {
         var psi = new ProcessStartInfo(hac, string.Join(" ", args.Select(a => "\"" + a + "\""))) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         var p = Process.Start(psi);
+        Fundo.Processo(p);
         p.OutputDataReceived += (s, e) => { }; p.ErrorDataReceived += (s, e) => { };
         p.BeginOutputReadLine(); p.BeginErrorReadLine();
-        while (!p.WaitForExit(1000))
+        while (!p.WaitForExit(2500))  // (medir a pasta varre milhares de arquivos: não todo segundo)
         {
             long t = 0; try { t = TamanhoPasta(saida); } catch { }
             Progresso(texto + " (" + (t / 1e9).ToString("0.0") + " de " + (esperado / 1e9).ToString("0.0") + " GB)", esperado > 0 ? 100.0 * t / esperado : -1);

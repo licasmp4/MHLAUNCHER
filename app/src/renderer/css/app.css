@@ -245,3 +245,8 @@ nav button[data-p=sobre]:hover svg, nav button[data-p=sobre].pulo svg { animatio
 .tecla.ouve { color: var(--brasa2); border-color: var(--brasa-linha); background: var(--brasa-suave); animation: ouvir 1s var(--suave) infinite; cursor: default; }
 @keyframes ouvir { 50% { box-shadow: 0 0 0 4px rgba(226, 96, 63, .12); } }
 @media (prefers-reduced-motion: reduce) { .tecla.ouve { animation: none; } }
+
+/* Windows: minimizar / maximizar / fechar são os do sistema (titleBarOverlay, 138 px à direita) */
+[data-so="win32"] #barra .janela { display: none; }
+[data-so="win32"] #barra { padding-right: 138px; }
+.mini .t span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -1,6 +1,7 @@
 // Início do launcher: monta as páginas, o menu com a seleção que desliza, a busca, o mini-player e o botão de jogar.
 (async () => {
   const est = await api.estado();
+  document.documentElement.dataset.so = est.plataforma;  // (win32: os botões da janela são os do Windows)
   const logo = await api.logo(); if (logo) $("#logo").style.backgroundImage = "url('" + logo + "')"; else $("#logo").style.background = "url('img/icone.png') center/cover";
 
   if (!est.pasta) {

@@ -42,7 +42,10 @@ const salvarIniJa = () => { clearTimeout(salvarTimer); salvarTimer = null; try {
 
 function criarJanela() {
   win = new BrowserWindow({
-    width: 1200, height: 790, minWidth: 880, minHeight: 600, frame: false, show: false, backgroundColor: "#120F0D",
+    width: 1200, height: 790, minWidth: 880, minHeight: 600, show: false, backgroundColor: "#120F0D",
+    // Windows: minimizar / maximizar / fechar nativos (desenhados pelo sistema, sempre clicáveis); a barra de
+    // arrastar do HTML engolia o clique dos botões feitos na página. Linux: sem moldura e os botões da página.
+    ...(process.platform === "win32" ? { titleBarStyle: "hidden", titleBarOverlay: { color: "#00000000", symbolColor: "#bdae96", height: 36 } } : { frame: false }),
     title: "MHGU Launcher", icon: path.join(__dirname, "..", "..", "build", "icon.png"),
     webPreferences: { preload: path.join(__dirname, "..", "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false, backgroundThrottling: true },
   });
