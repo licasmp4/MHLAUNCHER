@@ -165,6 +165,7 @@ function registrar() {
   h("biblioteca:procurar", () => biblioteca.procurar());
   h("biblioteca:instalar", id => biblioteca.instalar(id, p => win && win.webContents.send("progresso", { tipo: "jogo:" + id, p })));
   h("biblioteca:abrir", id => biblioteca.abrir(id));
+  h("biblioteca:capa", async id => { try { const n = await biblioteca.capa(id, pastaCache()); return n && "mhgu://app/_cache/" + encodeURIComponent(n); } catch { return null; } });
   h("biblioteca:abrirPasta", id => { const p = biblioteca.pastaDe(id); fs.mkdirSync(p, { recursive: true }); shell.openPath(p); });
   h("biblioteca:pasta", async id => {
     const r = await dialog.showOpenDialog(win, { title: "Onde instalar (ou onde já está instalado)", properties: ["openDirectory", "createDirectory"], defaultPath: biblioteca.pastaDe(id) });

@@ -256,31 +256,90 @@ nav button.tem-novo::after { content: ""; position: absolute; right: 12px; top: 
 @keyframes novo { 70% { box-shadow: 0 0 0 7px rgba(239, 122, 89, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 122, 89, 0); } }
 @media (prefers-reduced-motion: reduce) { nav button.tem-novo::after { animation: none; } }
 
-/* biblioteca: um cartão por jogo, com o emblema (a sigla do jogo) na cor dele */
-.biblioteca { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.jogo { --cor: var(--brasa2); position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); border-radius: var(--r3); overflow: hidden;
-  border: 1px solid var(--linha2); background: linear-gradient(180deg, rgba(45, 38, 33, .92), rgba(27, 22, 19, .94)); box-shadow: var(--relevo), var(--sombra);
-  transition: transform .35s var(--mola), border-color .2s, box-shadow .35s var(--mola); }
-.jogo:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--cor) 45%, transparent); box-shadow: var(--relevo), 0 22px 50px rgba(0, 0, 0, .5); }
-.jogo.verde { --cor: var(--verde); } .jogo.ouro { --cor: var(--ouro); } .jogo.cinza { --cor: var(--tx3); }
-.jogo .emblema { display: grid; place-content: center; justify-items: center; gap: 4px; position: relative; isolation: isolate;
-  background: radial-gradient(120% 90% at 50% 35%, color-mix(in srgb, var(--cor) 26%, transparent), transparent 70%), rgba(0, 0, 0, .22); border-right: 1px solid var(--linha); }
-.jogo .emblema b { font: 900 40px/1 var(--display); color: var(--cor); letter-spacing: -1px; text-shadow: 0 2px 0 rgba(0, 0, 0, .5), 0 0 24px color-mix(in srgb, var(--cor) 40%, transparent);
-  transition: transform .5s var(--mola); }
-.jogo:hover .emblema b { transform: scale(1.08) rotate(-3deg); }
-.jogo .emblema small { font: 700 11px var(--sans); letter-spacing: 2px; text-transform: uppercase; color: var(--tx3); }
-.jogo .corpo { display: grid; gap: 8px; align-content: start; padding: 18px 20px 18px; min-width: 0; }
-.jogo .topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.jogo h4 { margin: 0; font: 700 17px/1.25 var(--display); color: var(--tx); text-wrap: balance; }
-.jogo .topo .selo { flex: none; }
-.jogo p { margin: 0; color: var(--tx2); font-size: 14.5px; line-height: 1.45; }
-.jogo a { color: var(--cor); text-decoration: none; font-weight: 700; } .jogo a:hover { text-decoration: underline; }
-.jogo .precisa { font-size: 13.5px; color: var(--tx2); background: rgba(0, 0, 0, .18); border: 1px solid var(--linha); border-radius: var(--r1); padding: 9px 12px; }
-.jogo .precisa b { display: block; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--tx3); margin-bottom: 3px; }
-.jogo .precisa ul { margin: 0; padding-left: 16px; } .jogo .precisa li { margin: 2px 0; }
-.jogo .pasta-jogo { font: 12px ui-monospace, Consolas, monospace; color: var(--tx3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jogo .pasta-jogo:empty { display: none; }
-.jogo .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.jogo .acoes:empty { display: none; }
-.jogo.embreve { opacity: .62; } .jogo.embreve:hover { transform: none; }
-@media (max-width: 1040px) { .biblioteca { grid-template-columns: minmax(0, 1fr); } }
+/* biblioteca: o jogo escolhido em destaque (a capa em 3D sobre ela mesma desfocada) e a estante de capas.
+   Cada jogo tem a sua cor (--cor) no brilho, nos detalhes e na estante. */
+.lib-destaque, .lib-item { --cor: var(--brasa2); --cor-rgb: 239, 122, 89; }
+.lib-destaque.verde, .lib-item.verde { --cor: var(--verde); --cor-rgb: 100, 195, 164; }
+.lib-destaque.ouro, .lib-item.ouro { --cor: var(--ouro); --cor-rgb: 233, 186, 111; }
+.lib-destaque.azul, .lib-item.azul { --cor: #7fa9e0; --cor-rgb: 127, 169, 224; }
+.lib-destaque { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 44px; align-items: center; margin-top: 4px;
+  min-height: 400px; padding: 36px 48px; border-radius: var(--r3); overflow: hidden; isolation: isolate; border: 1px solid var(--linha2);
+  background: #15110e; box-shadow: var(--sombra); }
+.lib-fundo { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; z-index: -2;
+  filter: blur(38px) saturate(1.25) brightness(.55); transform: scale(1.1); transition: opacity .6s var(--suave); }
+.lib-fundo:not([src]), .lib-fundo[src=""] { opacity: 0; }
+.lib-veu { position: absolute; inset: 0; z-index: -1; background:
+  radial-gradient(60% 90% at 18% 50%, rgba(var(--cor-rgb), .22), transparent 70%),
+  linear-gradient(90deg, rgba(18, 15, 13, .15), rgba(18, 15, 13, .82) 58%, rgba(18, 15, 13, .92)),
+  linear-gradient(0deg, rgba(18, 15, 13, .7), transparent 40%); }
+/* a caixa do jogo em 3D */
+.lib-palco { perspective: 900px; }
+.lib-palco .caixa { position: relative; width: 236px; aspect-ratio: 5 / 7; border-radius: 10px; overflow: hidden; transform-style: preserve-3d;
+  background: #221c18; box-shadow: 0 30px 60px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 244, 225, .08), 0 0 80px rgba(var(--cor-rgb), .18);
+  transition: transform .5s var(--mola), box-shadow .5s var(--mola); }
+.lib-palco.quadrada .caixa { aspect-ratio: 1; width: 290px; border-radius: 22px; }
+.lib-palco .caixa img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lib-palco .caixa.sem img { opacity: 0; }
+.lib-palco .caixa::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, rgba(255, 255, 255, .16), transparent 32%), linear-gradient(90deg, rgba(0, 0, 0, .35), transparent 7%); }
+.lib-palco .brilho { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; transition: background .2s; }
+/* o texto */
+.lib-info { display: grid; gap: 12px; align-content: center; min-width: 0; max-width: 620px; }
+.lib-info .olho { font: 700 12px var(--sans); letter-spacing: 2.4px; text-transform: uppercase; color: var(--cor); }
+.lib-info h2 { margin: 0; font: 900 clamp(28px, 3.2vw, 42px)/1.06 var(--display); color: var(--tx); text-wrap: balance; text-shadow: 0 2px 20px rgba(0, 0, 0, .5); }
+.lib-info .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lib-info .chips a.selo { text-decoration: none; color: var(--tx2); transition: color .2s, background .2s; }
+.lib-info .chips a.selo:hover { color: var(--tx); background: rgba(233, 221, 197, .2); }
+.lib-info .sobre { margin: 0; font-size: 16px; line-height: 1.55; color: var(--tx2); max-width: 58ch; }
+.lib-info .precisa { font-size: 14px; color: var(--tx2); background: rgba(0, 0, 0, .28); border: 1px solid var(--linha); border-radius: var(--r2); padding: 11px 14px; backdrop-filter: blur(6px); }
+.lib-info .precisa b { display: block; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--tx3); margin-bottom: 4px; }
+.lib-info .precisa ul { margin: 0; padding-left: 17px; }
+.lib-info .precisa li { margin: 2px 0; }
+.lib-info .nota { font-size: 13.5px; color: var(--tx3); }
+.lib-info .pasta-jogo { font: 12px ui-monospace, Consolas, monospace; color: var(--tx3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-info .pasta-jogo:empty { display: none; }
+.lib-info .acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.btn.grande { height: 46px; padding: 0 22px; font-size: 16px; border-radius: 12px; }
+/* trocar de jogo: a capa gira e entra com a mola, o texto sobe em sequência */
+.lib-destaque.troca .caixa { animation: caixaEntra .7s var(--mola); }
+.lib-destaque.troca .lib-info > * { animation: textoEntra .55s var(--mola) both; }
+.lib-destaque.troca .lib-info > :nth-child(2) { animation-delay: .04s; }
+.lib-destaque.troca .lib-info > :nth-child(3) { animation-delay: .08s; }
+.lib-destaque.troca .lib-info > :nth-child(4) { animation-delay: .12s; }
+.lib-destaque.troca .lib-info > :nth-child(n+5) { animation-delay: .16s; }
+@keyframes caixaEntra { from { transform: rotateY(-38deg) translateX(-30px) scale(.9); opacity: 0; } }
+@keyframes textoEntra { from { transform: translateY(14px); opacity: 0; } }
+/* a estante */
+.lib-legenda { display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 6px; }
+.lib-legenda .secao { margin: 0; }
+.lib-estante { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; padding: 34px 4px 6px; }
+.lib-item { all: unset; cursor: pointer; display: grid; gap: 8px; justify-items: center; text-align: center; }
+.lib-item .moldura { position: relative; width: 100%; aspect-ratio: 5 / 7; border-radius: 9px; overflow: hidden; background: #221c18;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 244, 225, .07); transform-origin: 50% 100%;
+  transition: transform .45s var(--mola), box-shadow .45s var(--mola), filter .3s; filter: saturate(.75) brightness(.78); }
+.lib-item .moldura img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .5s var(--suave); }
+.lib-item.tem-capa .moldura img { opacity: 1; }
+.lib-item .moldura::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255, 255, 255, .14), transparent 30%); pointer-events: none; }
+.lib-item .moldura .brilho { position: absolute; top: -20%; bottom: -20%; width: 40%; left: -60%; transform: skewX(-18deg); pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 246, 228, .35), transparent); }
+.lib-item:hover .moldura { transform: translateY(-8px) rotate(-1.2deg); filter: none; }
+.lib-item:hover .moldura .brilho { animation: varreCapa .9s var(--suave); }
+@keyframes varreCapa { to { left: 130%; } }
+.lib-item.on .moldura { transform: translateY(-12px) scale(1.04); filter: none; box-shadow: 0 22px 40px rgba(0, 0, 0, .55), 0 0 0 2px var(--cor), 0 0 34px rgba(var(--cor-rgb), .45); }
+.lib-item:focus-visible .moldura { box-shadow: 0 0 0 3px var(--cor); }
+.lib-item .rot { display: flex; align-items: center; gap: 7px; font: 700 15px var(--display); color: var(--tx2); transition: color .2s; }
+.lib-item.on .rot, .lib-item:hover .rot { color: var(--tx); }
+.lib-item small { font-size: 12px; color: var(--tx3); letter-spacing: 1px; text-transform: uppercase; margin-top: -6px; }
+.lib-item .ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--s4); box-shadow: 0 0 0 2px rgba(0, 0, 0, .3); }
+.lib-item .ponto.on { background: var(--verde); }
+.lib-item .ponto.novo { background: var(--brasa2); animation: novo 2s var(--suave) infinite; }
+.lib-rodape { margin-top: 22px; }
+@media (max-width: 1040px) {
+  .lib-destaque { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; padding: 32px 24px; }
+  .lib-info { justify-items: center; }
+  .lib-info .chips, .lib-info .acoes { justify-content: center; }
+  .lib-palco .caixa { width: 190px; }
+  .lib-palco.quadrada .caixa { width: 220px; }
+  .lib-estante { gap: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .lib-destaque.troca .caixa, .lib-destaque.troca .lib-info > * { animation: none; } .lib-palco .caixa { transition: none; } }

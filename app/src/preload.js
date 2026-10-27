@@ -5,7 +5,7 @@ const canais = ["estado", "pasta:escolher", "ini:get", "ini:set", "ini:restaurar
   "presenca:nome", "sistema:placa", "sistema:ips", "sistema:firewall", "sistema:liberar", "sistema:ipPublico", "mods", "mods:ligar", "plugins", "plugins:ligar",
   "layouts", "layouts:trocar", "cheats", "cheats:ligar", "abrir", "externo", "copiar", "amigos", "amigos:salvar", "amigos:consultar", "atualiza:port",
   "atualiza:portAplicar", "atualiza:launcher", "atualiza:correcao", "atualiza:launcherAplicar", "novidades", "diag", "cena:video", "logo", "cache:ler", "cache:salvar", "janela",
-  "biblioteca", "biblioteca:procurar", "biblioteca:instalar", "biblioteca:abrir", "biblioteca:abrirPasta", "biblioteca:pasta"];
+  "biblioteca", "biblioteca:procurar", "biblioteca:instalar", "biblioteca:abrir", "biblioteca:abrirPasta", "biblioteca:pasta", "biblioteca:capa"];
 const api = {};
 for (const c of canais) api[c.replace(/:(\w)/g, (_, l) => l.toUpperCase())] = chama(c);
 api.aoNavegar = fn => ipcRenderer.on("nav", (e, p) => fn(p));

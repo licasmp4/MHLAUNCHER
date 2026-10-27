@@ -102,7 +102,7 @@
     const novas = [];
     try { const r = await api.atualizaLauncher(); if (r && r.nova) novas.push({ k: "l" + r.ultima, t: "launcher v" + r.ultima }); if (r && r.correcao) novas.push({ k: "c" + r.correcao.nome, t: "correções do port " + r.correcao.nome }); } catch {}
     if (temGU) try { const p = await api.atualizaPort(); if (p && p.nova) novas.push({ k: "p" + p.ultima, t: "port " + p.ultima }); } catch {}
-    try { const b = await api.bibliotecaProcurar(); for (const g of BIBLIOTECA) if (b[g.id] && b[g.id].nova) novas.push({ k: g.id + b[g.id].ultima, t: g.cod + " " + b[g.id].ultima, jogo: true }); } catch {}
+    try { const b = await api.bibliotecaProcurar(); for (const g of BIBLIOTECA) if (b[g.id] && b[g.id].nova) novas.push({ k: g.id + b[g.id].ultima, t: g.curto + " " + b[g.id].ultima, jogo: true }); } catch {}
     $('nav button[data-p="sobre"]').classList.toggle("tem-novo", novas.some(n => !n.jogo));
     $('nav button[data-p="jogos"]').classList.toggle("tem-novo", novas.some(n => n.jogo));
     const agora = novas.filter(n => !avisadas.has(n.k));

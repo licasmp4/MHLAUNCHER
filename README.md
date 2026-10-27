@@ -33,7 +33,7 @@ O Generations Ultimate nativo, traduzido, com texturas HD e online com os amigos
 | **Generations Ultimate** (Switch) | [MHGURecomp](https://github.com/morerokk/MHGURecomp) | Instalador completo, tradução pt-BR, HD, HUD de caça, online e todos os ajustes |
 | **4 Ultimate** (3DS) | [MH4UltimateDC](https://github.com/CompaLarios18/MH4UltimateDC) | Instala, atualiza e abre o port |
 | **Freedom Unite** (PSP) | [MHForever](https://github.com/Mango77x/MHForever) | Instala, atualiza e abre o port |
-| **Portable 3rd** (PSP) | ainda sem port | Aparece quando sair |
+| **Portable 3rd HD** (PSP/PS3) | [Yakumo](https://github.com/TeamGDB/Yakumo) | Instala, atualiza e abre o port; tradução pt-BR da comunidade a um clique |
 
 Os ports são projetos de fãs, cada um com o seu autor e a sua licença. Nenhum jogo vem junto: cada um usa a própria cópia. O MHLAUNCHER avisa quando sai versão nova de qualquer um deles.
 

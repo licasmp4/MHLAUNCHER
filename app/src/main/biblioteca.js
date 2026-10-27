@@ -19,7 +19,32 @@ const JOGOS = {
     asset: WIN ? /windows-x64\.zip$/i : /linux-x64\.tar\.gz$/i,
     exe: WIN ? ["MHForever.exe"] : ["MHForever", "mhforever"],
   },
+  mhp3: {  // (a versão normal, não a "-portable": os dados dela ficam em %APPDATA%, e atualizar não mexe neles)
+    repo: "TeamGDB/Yakumo", pasta: "MHP3rd",
+    asset: WIN ? /windows-x86_64\.zip$/i : /linux-x86_64\.tar\.gz$/i,
+    exe: WIN ? ["Yakumo.exe", "yakumo.exe"] : ["Yakumo", "yakumo"],
+  },
 };
+
+// capas: baixadas na hora do acervo público do libretro (o mesmo do RetroArch) e guardadas no PC; nenhuma arte dos
+// jogos vai no projeto. O Generations Ultimate não está lá (o acervo não tem o Switch): ele usa o ícone da cópia do
+// próprio jogador (mhgu.ico, main.js "logo").
+const LIBRETRO = "https://thumbnails.libretro.com/";
+const CAPAS = {
+  mh4u: "Nintendo - Nintendo 3DS/Named_Boxarts/Monster Hunter 4 Ultimate (USA).png",
+  mhfu: "Sony - PlayStation Portable/Named_Boxarts/Monster Hunter Freedom Unite (USA) (En,Fr,De,Es,It).png",
+  mhp3: "Sony - PlayStation Portable/Named_Boxarts/Monster Hunter Portable 3rd (Japan) (v1.02).png",
+};
+async function capa(id, pasta) {
+  if (!CAPAS[id]) return null;
+  const arq = path.join(pasta, "capa-" + id + ".png");
+  if (!fs.existsSync(arq)) {
+    const r = await fetch(LIBRETRO + CAPAS[id].split("/").map(encodeURIComponent).join("/"), { headers: { "User-Agent": "MHLAUNCHER" } });
+    if (!r.ok) return null;
+    fs.writeFileSync(arq, Buffer.from(await r.arrayBuffer()));
+  }
+  return "capa-" + id + ".png";
+}
 const VERSAO = ".mhlauncher-versao";
 
 const pastaDe = id => (jogo.config().jogos || {})[id] || path.join(os.homedir(), "MHLAUNCHER", JOGOS[id].pasta);
@@ -75,4 +100,4 @@ function abrir(id) {
   return { ok: true };
 }
 
-module.exports = { JOGOS, estado, procurar, instalar, abrir, pastaDe, definirPasta };
+module.exports = { JOGOS, estado, procurar, instalar, abrir, pastaDe, definirPasta, capa };
