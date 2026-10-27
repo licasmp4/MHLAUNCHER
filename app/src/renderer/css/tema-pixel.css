@@ -1,0 +1,119 @@
+/* ===== Tema pixel (v4), do protótipo da Tainá: floresta, musgo e brasa; cantos retos, bordas de 2 px e sombras duras
+   sem desfoque. Só a aparência: vem depois de base.css e app.css e troca os tokens e a forma das peças; o layout e as
+   funções ficam como estão. Fontes: Almendra SC (títulos), Pixelify Sans (texto), Press Start 2P (rótulos). */
+@font-face { font-family: "Almendra SC"; font-weight: 400; src: url("../fonts/AlmendraSC-Regular.ttf"); }
+@font-face { font-family: "Pixelify Sans"; font-weight: 400 700; src: url("../fonts/PixelifySans.ttf"); }
+@font-face { font-family: "Press Start 2P"; font-weight: 400; src: url("../fonts/PressStart2P-Regular.ttf"); }
+
+:root {
+  /* floresta: do fundo ao relevo */
+  --bg: #090f0b; --s1: #111b15; --s2: #1b291e; --s3: #27372a; --s4: #334535;
+  --linha: #1f2c21; --linha2: #334535; --linha3: #4b6250;
+  --bronze: #7f955c; --musgo: #7f955c; --pergaminho: #c9bd98; --tinta: #261d14; --sombra-dura: #050907;
+  /* texto */
+  --tx: #eee7d2; --tx2: #b5b9a9; --tx3: #849080;
+  /* ação e sinais */
+  --brasa: #e45f38; --brasa2: #f07a52; --brasa3: #b9472a; --brasa-suave: #2b1a13; --brasa-linha: #e45f38;
+  --verde: #8fbf6a; --ouro: #e9ba6f;
+  /* forma: tudo reto, sombras deslocadas */
+  --r1: 0px; --r2: 0px; --r3: 0px; --pill: 0px;
+  --relevo: inset 0 -2px 0 rgba(0, 0, 0, .35);
+  --sombra: 4px 4px 0 var(--sombra-dura);
+  --display: "Almendra SC", "Cinzel", Georgia, serif;
+  --sans: "Pixelify Sans", "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --rotulo: "Press Start 2P", ui-monospace, monospace;
+}
+* { border-radius: 0 !important; }
+html, body { -webkit-font-smoothing: none; }
+::-webkit-scrollbar-thumb { border-width: 2px; }
+.rolando::-webkit-scrollbar-thumb, :hover::-webkit-scrollbar-thumb { background-color: var(--s4); }
+
+/* tipografia: títulos com sombra dura, rótulos em letra de fliperama */
+.h1, .lib-info h2 { font-weight: 400; text-shadow: 3px 3px 0 #000; letter-spacing: .01em; }
+.secao { font: 400 10px/1.6 var(--rotulo); letter-spacing: .12em; text-transform: uppercase; color: #aa9e7e; }
+.secao::before { width: 8px; height: 8px; box-shadow: 2px 2px 0 #4a1c10; }
+.secao .acao { font-family: var(--sans); }
+nav h6, .teclado .tgrupo, .lib-info .olho, .lib-info .precisa b, .lib-item small { font-family: var(--rotulo) !important; font-weight: 400 !important; font-size: 8px !important; letter-spacing: .12em !important; }
+.opcao .nome, .jogo h4, .lib-item .rot { font-weight: 400; }
+.divisoria s { background: var(--musgo); height: 2px; }
+
+/* cantos de pixel na cor brasa (no lugar das cantoneiras de bronze) */
+.cartao::before { inset: -2px; --c: var(--brasa); background:
+  linear-gradient(var(--c), var(--c)) top left / 8px 2px no-repeat, linear-gradient(var(--c), var(--c)) top left / 2px 8px no-repeat,
+  linear-gradient(var(--c), var(--c)) top right / 8px 2px no-repeat, linear-gradient(var(--c), var(--c)) top right / 2px 8px no-repeat,
+  linear-gradient(var(--c), var(--c)) bottom left / 8px 2px no-repeat, linear-gradient(var(--c), var(--c)) bottom left / 2px 8px no-repeat,
+  linear-gradient(var(--c), var(--c)) bottom right / 8px 2px no-repeat, linear-gradient(var(--c), var(--c)) bottom right / 2px 8px no-repeat; }
+
+/* superfícies: cor chapada, borda de 2 px, sombra dura */
+.cartao { background: var(--s1); border: 2px solid var(--linha2); box-shadow: var(--sombra); }
+.opcao { background: var(--s1); border: 2px solid var(--linha2); box-shadow: 3px 3px 0 var(--sombra-dura); }
+.opcao:hover { box-shadow: 5px 5px 0 var(--sombra-dura); }
+.opcao.on { background: var(--brasa-suave); border-color: var(--brasa); box-shadow: inset 3px 0 0 #ff6a3d, 4px 4px 0 #3a1a10; }
+.aviso { border: 2px solid var(--linha2); box-shadow: var(--sombra); }
+.cabeca, .destaque, .lib-destaque, .previa { border: 2px solid var(--linha2) !important; box-shadow: var(--sombra) !important; }
+.linha + .linha, .teclado .tlinha + .tlinha { border-top: 2px solid var(--linha); }
+.chip-ic { background: var(--s2) !important; border: 2px solid var(--linha2); box-shadow: 2px 2px 0 var(--sombra-dura) !important; }
+
+/* botões: chapados, sobem em degraus no mouse e afundam 4 px no clique */
+.btn { background: var(--s3); border: 2px solid var(--linha3); box-shadow: 3px 3px 0 var(--sombra-dura); font-family: var(--sans); font-weight: 600; transition: none; }
+.btn:hover { background: var(--s4); border-color: #5c7561; box-shadow: 3px 3px 0 var(--sombra-dura); animation: pixelPulo .24s steps(3, end) forwards; }
+.btn:active { animation: none; transform: translate(3px, 3px); box-shadow: none; }
+.btn.primario { background: var(--brasa); border: 2px solid #ff7b4e; color: #fff6dc; box-shadow: 4px 4px 0 #5b2419; }
+.btn.primario:hover { background: var(--brasa); box-shadow: 4px 4px 0 #5b2419; }
+.btn.primario:active { transform: translate(4px, 4px); box-shadow: none; }
+.btn.primario::after { background: linear-gradient(90deg, transparent, rgba(255, 246, 220, .35), transparent); }
+.btn.fantasma { box-shadow: none; border-color: transparent; background: transparent; }
+.btn.fantasma:hover { border-color: var(--linha2); background: var(--s2); box-shadow: none; }
+#jogar { font: 400 17px var(--display) !important; letter-spacing: .04em; text-transform: uppercase; }
+@keyframes pixelPulo { to { transform: translateY(-3px); } }
+
+/* menu: a aba ativa ganha borda brasa e a faixa da esquerda */
+nav button { border: 2px solid transparent; font-family: var(--sans); font-weight: 600; }
+nav button.on { color: #f3ead2; font-weight: 600; }
+.marca-nav { background: var(--brasa-suave) !important; border: 2px solid var(--brasa) !important; box-shadow: inset 3px 0 0 #ff6a3d !important; }
+nav button.on svg { color: var(--brasa2); }
+
+/* controles */
+.campo { border: 2px solid var(--linha2); background: #070c09; }
+.campo:focus { border-color: var(--brasa); box-shadow: 3px 3px 0 #3a1a10; }
+.chave span { background: var(--s3); border: 2px solid var(--linha3); box-shadow: none; }
+.chave span::after { top: 2px; left: 2px; width: 16px; height: 16px; background: var(--tx2); box-shadow: 2px 2px 0 rgba(0, 0, 0, .4); }
+.chave input:checked + span { background: var(--brasa); border-color: #ff7b4e; }
+.seg { background: #070c09; border: 2px solid var(--linha2); box-shadow: none; }
+.seg .marca { background: var(--brasa); box-shadow: 2px 2px 0 #5b2419; }
+.selo { background: var(--s2); border: 2px solid var(--linha2); height: 24px; font-weight: 600; }
+.selo.brasa { background: #3a1a10; border-color: var(--brasa); color: #fff3df; }
+.selo.verde { background: #18241a; border-color: var(--musgo); color: #cfe3b5; }
+.tecla { background: var(--s3); border: 2px solid var(--linha3); border-bottom-width: 4px; box-shadow: none; }
+.tecla.ouve { background: #3a1a10; border-color: var(--brasa); }
+.mini { border: 2px solid var(--linha2) !important; box-shadow: 3px 3px 0 var(--sombra-dura) !important; background: var(--s1) !important; }
+#toast { border: 2px solid var(--musgo) !important; box-shadow: 4px 4px 0 var(--sombra-dura) !important; }
+
+/* quadro de missões e biblioteca: cartaz de pergaminho com prego e borda brasa */
+.cartaz { background: var(--pergaminho) !important; color: var(--tinta) !important; box-shadow: 0 0 0 3px var(--brasa), 5px 5px 0 #421d15 !important; }
+.cartaz.on { box-shadow: 0 0 0 3px #ff8a5c, 6px 6px 0 #421d15 !important; }
+.cartaz .foto { border: 2px solid #5b604d; image-rendering: pixelated; }
+.cartaz small em { color: #c63724; letter-spacing: -.08em; }
+.lib-item .moldura { box-shadow: 4px 4px 0 var(--sombra-dura) !important; border: 2px solid var(--linha2); }
+.lib-item.on .moldura { border-color: var(--cor); box-shadow: 0 0 0 2px var(--cor), 6px 6px 0 var(--sombra-dura) !important; }
+.lib-palco .caixa { box-shadow: 0 0 0 2px var(--cor), 8px 8px 0 var(--sombra-dura) !important; }
+
+/* ícones em pixel (16x16, da Tainá): a forma vem da imagem, a cor do texto do menu; tira de quadros animada em degraus */
+.ic-px { width: 16px; height: 16px; flex: none; background: currentColor; image-rendering: pixelated;
+  -webkit-mask: var(--px) 0 0 / auto 16px no-repeat; mask: var(--px) 0 0 / auto 16px no-repeat; }
+.ic-inicio { --px: url("../img/pixel/icone-inicio.png"); }
+nav button:hover .ic-inicio, nav button.on .ic-inicio { animation: icAbre3 .6s steps(2, end) forwards; }
+nav button.on .ic-px { color: var(--brasa2); }
+@keyframes icAbre3 { from { -webkit-mask-position: 0 0; mask-position: 0 0; } to { -webkit-mask-position: -32px 0; mask-position: -32px 0; } }
+@media (prefers-reduced-motion: reduce) { .btn:hover { animation: none; } nav button:hover .ic-inicio, nav button.on .ic-inicio { animation: none; -webkit-mask-position: -32px 0; mask-position: -32px 0; } }
+
+/* fundo e barra lateral em floresta (no app.css eles têm o couro escrito direto) */
+#lado { background: #0b130e !important; border-right: 2px solid var(--linha2) !important; }
+#fundo::after { background: radial-gradient(120% 90% at 60% 20%, rgba(9, 15, 11, .4), rgba(9, 15, 11, .93) 70%), linear-gradient(rgba(9, 15, 11, .45), rgba(9, 15, 11, .75)) !important; }
+#fundo img.on { opacity: .3; filter: blur(34px) saturate(.8) hue-rotate(-12deg); }
+#grao { opacity: .25; }
+nav h6 { text-transform: uppercase; color: #879477 !important; margin-top: 16px; }
+.pe .btn.primario { font: 400 17px var(--display) !important; }
+.mini .t { line-height: 1.3; }
+.mini .t b { font-weight: 600; }
+.mini .prog, .mini .prog i { height: 2px; }
