@@ -34,6 +34,19 @@ const CAPAS = {
   mh4u: "Nintendo - Nintendo 3DS/Named_Boxarts/Monster Hunter 4 Ultimate (USA).png",
   mhfu: "Sony - PlayStation Portable/Named_Boxarts/Monster Hunter Freedom Unite (USA) (En,Fr,De,Es,It).png",
   mhp3: "Sony - PlayStation Portable/Named_Boxarts/Monster Hunter Portable 3rd (Japan) (v1.02).png",
+  // aba Collabs: um jogo de cada série que tem collab no Generations Ultimate
+  "c-zelda": "Nintendo - Nintendo 64/Named_Boxarts/Legend of Zelda, The - Ocarina of Time (USA).png",
+  "c-mario": "Nintendo - Nintendo 64/Named_Boxarts/Super Mario 64 (USA).png",
+  "c-okami": "Nintendo - Nintendo DS/Named_Boxarts/Okamiden (USA).png",
+  "c-starfox": "Nintendo - Nintendo 64/Named_Boxarts/Star Fox 64 (USA).png",
+  "c-metroid": "Nintendo - Super Nintendo Entertainment System/Named_Boxarts/Super Metroid (Japan, USA) (En,Ja).png",
+  "c-megaman": "Nintendo - Nintendo Entertainment System/Named_Boxarts/Mega Man 2 (USA).png",
+  "c-fe": "Nintendo - Nintendo 3DS/Named_Boxarts/Fire Emblem - Awakening (USA).png",
+  "c-sf": "Nintendo - Super Nintendo Entertainment System/Named_Boxarts/Street Fighter II Turbo (USA).png",
+  "c-dmc": "Sony - PlayStation 2/Named_Boxarts/Devil May Cry (USA).png",
+  "c-gng": "Nintendo - Nintendo Entertainment System/Named_Boxarts/Ghosts'n Goblins (USA).png",
+  "c-strider": "Sega - Mega Drive - Genesis/Named_Boxarts/Strider (USA, Europe).png",
+  "c-yugioh": "Nintendo - Game Boy Advance/Named_Boxarts/Yu-Gi-Oh! - The Eternal Duelist Soul (USA).png",
 };
 async function capa(id, pasta) {
   if (!CAPAS[id]) return null;

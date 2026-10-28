@@ -38,11 +38,42 @@ function acharPlugin(dir, nro) {
   }
   return null;
 }
+// plugins que vêm dentro do launcher (src/main/recursos, fora do git): trocam os do mod quando são outros, para quem
+// instalou antes receber as versões novas (ex.: o hitmarker). Com o jogo aberto o arquivo está em uso: fica para a próxima.
+function atualizarPlugins(dir) {
+  for (const n of Object.values(NRO)) {
+    const novo = path.join(__dirname, "recursos", n), f = acharPlugin(dir, n);
+    if (!f || !fs.existsSync(novo)) continue;
+    try { const a = fs.readFileSync(novo); if (Buffer.compare(a, fs.readFileSync(f)) !== 0) fs.writeFileSync(f, a); } catch {}
+  }
+}
 function plugins(dir) { const r = {}; for (const [k, n] of Object.entries(NRO)) { const f = acharPlugin(dir, n); r[k] = f ? { instalado: true, ligado: !f.endsWith(".off") } : { instalado: false, ligado: false }; } return r; }
 function ligarPlugin(dir, qual, ligar) {
   const f = acharPlugin(dir, NRO[qual]); if (!f) return;
   const alvo = ligar ? f.replace(/\.off$/, "") : (f.endsWith(".off") ? f : f + ".off");
   if (alvo !== f) fs.renameSync(f, alvo);
+}
+
+// opções do plugin de dano: "hitmarker = ..." e "numbers = ..." (true|false) no attack_damage_display.ini de cada
+// save (%APPDATA%\MHGURecomp\save\save_N; sem a linha, o plugin usa ligado)
+function iniDano() {
+  const b = path.join(process.env.APPDATA || "", "MHGURecomp", "save");
+  try { return fs.readdirSync(b).filter(n => /^save_\d+$/.test(n)).map(n => path.join(b, n, "attack_damage_display.ini")); } catch { return []; }
+}
+function opcaoDano(dir, chave, ligar) {
+  if (!["hitmarker", "numbers"].includes(chave)) return;
+  const re = new RegExp("^" + chave + "\\s*=.*$", "m");
+  if (ligar === undefined) {
+    for (const f of iniDano()) { try { const m = re.exec(fs.readFileSync(f, "utf8")); if (m) return /=\s*true/.test(m[0]); } catch {} }
+    return true;
+  }
+  for (const f of iniDano()) {
+    let s = "[display]\n"; try { s = fs.readFileSync(f, "utf8"); } catch {}
+    s = re.test(s) ? s.replace(re, chave + " = " + !!ligar) : s.replace(/\s*$/, "\n" + chave + " = " + !!ligar + "\n");
+    try { fs.writeFileSync(f, s); } catch {}
+  }
+  if (ligar) ligarPlugin(dir, "dano", true);  // (números ou hitmarker precisam do plugin ligado)
+  return !!ligar;
 }
 
 // botões no jogo: a tradução vem com PlayStation; Xbox e Nintendo são pacotes por cima
@@ -76,4 +107,4 @@ function ligarCheat(dir, arquivo, ligar) {
   if (de !== para && fs.existsSync(de)) fs.renameSync(de, para);
 }
 
-module.exports = { listar, ligarMod, plugins, ligarPlugin, layouts, trocarLayout, trocarNomes, cheats, ligarCheat, dirs };
+module.exports = { listar, ligarMod, atualizarPlugins, plugins, ligarPlugin, opcaoDano, layouts, trocarLayout, trocarNomes, cheats, ligarCheat, dirs };

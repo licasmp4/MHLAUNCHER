@@ -103,10 +103,12 @@ nav button.on svg { color: var(--brasa2); }
 .ic-px { width: 16px; height: 16px; flex: none; background: currentColor; image-rendering: pixelated;
   -webkit-mask: var(--px) 0 0 / auto 16px no-repeat; mask: var(--px) 0 0 / auto 16px no-repeat; }
 .ic-inicio { --px: url("../img/pixel/icone-inicio.png"); }
-nav button:hover .ic-inicio, nav button.on .ic-inicio { animation: icAbre3 .6s steps(2, end) forwards; }
+.ic-jogos { --px: url("../img/pixel/icone-jogos.png"); } .ic-cacada { --px: url("../img/pixel/icone-cacada.png"); }
+.ic-mods { --px: url("../img/pixel/icone-mods.png"); } .ic-collabs { --px: url("../img/pixel/icone-collabs.png"); }
+nav button:hover .ic-px, nav button.on .ic-px { animation: icAbre3 .6s steps(2, end) forwards; }
 nav button.on .ic-px { color: var(--brasa2); }
 @keyframes icAbre3 { from { -webkit-mask-position: 0 0; mask-position: 0 0; } to { -webkit-mask-position: -32px 0; mask-position: -32px 0; } }
-@media (prefers-reduced-motion: reduce) { .btn:hover { animation: none; } nav button:hover .ic-inicio, nav button.on .ic-inicio { animation: none; -webkit-mask-position: -32px 0; mask-position: -32px 0; } }
+@media (prefers-reduced-motion: reduce) { .btn:hover { animation: none; } nav button:hover .ic-px, nav button.on .ic-px { animation: none; -webkit-mask-position: -32px 0; mask-position: -32px 0; } }
 
 /* fundo e barra lateral em floresta (no app.css eles têm o couro escrito direto) */
 #topo { background: #0b130e !important; border-bottom: 2px solid var(--linha2) !important; }
@@ -126,3 +128,25 @@ nav h6 { background: var(--linha3); }
 #fundo::after { background: linear-gradient(180deg, rgba(9, 15, 11, .55), rgba(9, 15, 11, .25) 45%, rgba(9, 15, 11, .15)) !important; }
 #grao { opacity: .12; }
 #troca-pixel { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; image-rendering: pixelated; }
+
+/* ---- botões com relevo de pixel: luz em cima e à esquerda, sombra embaixo e à direita (como os menus de jogo antigo);
+   no hover um brilho atravessa em degraus; ao clicar, o relevo inverte e o botão afunda */
+.btn { position: relative; overflow: hidden; box-shadow: inset 2px 2px 0 rgba(255, 246, 220, .09), inset -2px -2px 0 rgba(0, 0, 0, .35), 3px 3px 0 var(--sombra-dura); }
+.btn:hover { box-shadow: inset 2px 2px 0 rgba(255, 246, 220, .14), inset -2px -2px 0 rgba(0, 0, 0, .35), 3px 3px 0 var(--sombra-dura); }
+.btn:active { box-shadow: inset -2px -2px 0 rgba(255, 246, 220, .08), inset 2px 2px 0 rgba(0, 0, 0, .45); }
+.btn::before { content: ""; position: absolute; top: 0; bottom: 0; left: -40%; width: 28%; pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgba(255, 246, 220, .16) 0 4px, transparent 4px 8px); transform: skewX(-20deg); opacity: 0; }
+.btn:hover::before { opacity: 1; animation: btnBrilho .5s steps(6, end) forwards; }
+@keyframes btnBrilho { from { left: -40%; } to { left: 120%; } }
+.btn.primario { box-shadow: inset 2px 2px 0 rgba(255, 230, 190, .35), inset -2px -2px 0 rgba(91, 36, 25, .55), 4px 4px 0 #5b2419; }
+.btn.primario:hover { background: #ee6b42; box-shadow: inset 2px 2px 0 rgba(255, 230, 190, .45), inset -2px -2px 0 rgba(91, 36, 25, .55), 4px 4px 0 #5b2419; }
+.btn.primario:active { box-shadow: inset -2px -2px 0 rgba(255, 230, 190, .25), inset 2px 2px 0 rgba(91, 36, 25, .6); }
+.btn.fantasma, .btn.fantasma:hover, .btn.fantasma:active { box-shadow: none; }
+.btn.fantasma::before { display: none; }
+/* "Partir em missão": brasas em pixel subindo do botão */
+#jogar { overflow: visible !important; }
+#jogar::after { content: ""; position: absolute; left: 12%; right: 12%; top: -14px; height: 14px; pointer-events: none; background: none;
+  box-shadow: 6px 10px 0 -1px #f5b856, 40px 6px 0 -1px #e45f38, 90px 12px 0 -1px #f39a45, 140px 4px 0 -1px #f5b856, 190px 9px 0 -1px #e45f38;
+  width: 4px; height: 4px; animation: brasas 1.8s steps(6, end) infinite; opacity: .9; }
+@keyframes brasas { 0% { transform: translateY(8px); opacity: 0; } 30% { opacity: .9; } 100% { transform: translateY(-18px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .btn:hover::before, #jogar::after { animation: none; display: none; } }

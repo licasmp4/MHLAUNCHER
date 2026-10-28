@@ -1,5 +1,6 @@
 // Floresta em pixel art, animada, no fundo do launcher (tema pixel): céu com lua, montanhas, três fileiras de pinheiros,
-// capim que balança, neblina, vaga-lumes e, de tempos em tempos, um wyvern cruzando o céu. Desenhada em resolução baixa
+// capim que balança, neblina, vaga-lumes e, de tempos em tempos, um wyvern cruzando o céu, um monstro grande andando
+// no morro do fundo e uma manada de herbívoros passando pelo chão. Desenhada em resolução baixa
 // (cada pixel vira 4x4 na tela, sem borrar), a 12 quadros por segundo; as camadas andam um pouco com o mouse. Para
 // quando a janela está escondida. Provisória até chegar a arte da Tainá (que entra no lugar, em camadas).
 const Floresta = (() => {
@@ -7,9 +8,11 @@ const Floresta = (() => {
   const COR = { ceu: ["#0a1510", "#0e1c15", "#13251b", "#1a3124", "#223d2c"], lua: "#d8cda6", lua2: "#a89f7d", halo: "#2b4533", estrela: "#c9bd98",
     serra: "#18301f", serra2: "#1d3826", longe: "#1a3322", longe2: "#203d29", meio: "#132819", meio2: "#1b3422", perto: "#0b170f", perto2: "#112016",
     chao: "#0a140c", capim: "#2f4a29", capim2: "#5a7a40",
-    vaga: ["#e9ba6f", "#f07a52", "#cfe3b5"], neblina: "rgba(201, 189, 152, .06)", wyvern: "#040a06", olho: "#ff6a3d", ave: "#06100a" };
+    vaga: ["#e9ba6f", "#f07a52", "#cfe3b5"], neblina: "rgba(201, 189, 152, .06)", wyvern: "#040a06", olho: "#ff6a3d", ave: "#06100a",
+    bruto: "#0c1d12", manada: "#07100a", olho2: "#e9ba6f" };
   let cv, g, W = 0, H = 0, t = 0, ultimo = 0, rodando = false, mx = 0, mxAlvo = 0;
-  let camadas = [], vagas = [], estrelas = [], wyv = null, aves = [], proxWyv = 0, proxAves = 0;
+  let camadas = [], vagas = [], estrelas = [], wyv = null, aves = [], proxWyv = 4, proxAves = 0;
+  let bruto = null, manada = [], proxBruto = 12, proxManada = 25;
 
   // número aleatório repetível (a mesma floresta toda vez)
   const sorte = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
@@ -53,6 +56,15 @@ const Floresta = (() => {
     ["......xx..................", "......xxx.................", ".......xxx........xx......", "........xxxx....xxxx......", ".x.......xxxxxxxxxx.......", "xxxxxxxxxxxxxxxxxxxxxx....", ".xxxxxxxxxxxxxxxxxxxxxxxo.", "......xx..xx.....xxxxxxxxx", ".....xx....xx.........xx..", "..........................", ".........................."],
     ["..........................", "..........................", "..........................", "..........................", ".x........................", "xxxxxxxxxxxxxxxxxxxxxx....", ".xxxxxxxxxxxxxxxxxxxxxxxo.", "......xxxxxxxxxx.xxxxxxxxx", "....xxxxx...xxxxxx....xx..", "...xxx..........xxx.......", "..xx..............xx......"],
   ];
+  // monstro grande (wyvern bruto, de pé): o corpo e as pernas em dois passos, 31x14
+  const BRUTO_CORPO = ["..........................xx...", ".........................xxxx..", "..........xxxxxxx.......xxxxxxo",
+    ".......xxxxxxxxxxxxx...xxxxxxxx", "....xxxxxxxxxxxxxxxxxxxxxxxx...", "..xxxxxxxxxxxxxxxxxxxxxxxxx....", ".xxxxxxxxxxxxxxxxxxxxxxxxx.....",
+    "xxx..xxxxxxxxxxxxxxxxxxxx......", "xx....xxxxxxxxxxxxxxxxxxx......"];
+  const BRUTO = [BRUTO_CORPO.concat(["x......xxxx.......xxxx.........", ".......xxx.........xxx........", "......xxx...........xxx.......", "......xx.............xx.......", ".....xxx.............xxx......"]),
+    BRUTO_CORPO.concat([".......xxxx.......xxxx.........", "........xxx.......xxx.........", "........xxx......xxx..........", ".........xx......xx...........", "........xxx.....xxx..........."])];
+  // herbívoro de pescoço comprido, 12x8, dois passos
+  const PASTOR = [["........xx..", ".......xxxo.", ".......xx...", "......xx....", ".xxxxxxx....", "xxxxxxxx....", "x.xx..xx....", "..x....x...."],
+    ["........xx..", ".......xxxo.", ".......xx...", "......xx....", ".xxxxxxx....", "xxxxxxxx....", "..xx..xx....", ".x....x....."]];
   function sprite(m, x, y, cor, olho) {
     x = Math.round(x); y = Math.round(y);
     for (let i = 0; i < m.length; i++) for (let j = 0; j < m[i].length; j++) {
@@ -85,6 +97,15 @@ const Floresta = (() => {
     if (wyv) { wyv.x += wyv.v; wyv.y += Math.sin(t * 1.3) * .25; sprite(WYV[Math.floor(t * 3) % 2], wyv.x, wyv.y, COR.wyvern, COR.olho); if (wyv.x > W + 30) wyv = null; }
     serra(H * .5, H * .16, .013, ox * .1, COR.serra);
     serra(H * .56, H * .12, .021, 300 + ox * .14, COR.serra2);
+    // o monstro grande andando no morro do fundo (atrás da neblina e das árvores); para e olha de vez em quando
+    if (bruto) {
+      const parado = Math.sin(t * .35 + bruto.f) > .82;
+      if (!parado) bruto.x += bruto.v;
+      const passo = parado ? 0 : Math.floor(t * 2.4) % 2;
+      const x = bruto.x - ox * .14, y = H * .56 - H * .12 * .55 - 13 + (passo ? 0 : -1);
+      sprite(BRUTO[passo], x, y, COR.bruto, Math.sin(t * 3) > -.6 ? COR.olho : COR.bruto);
+      if (bruto.x > W + 40) bruto = null;
+    }
     // neblina passando entre as fileiras
     g.fillStyle = COR.neblina;
     for (let k = 0; k < 3; k++) { const y = Math.round(H * (.58 + k * .07)), x0 = Math.round((t * (4 + k * 2) + k * 90) % (W + 160)) - 160; g.fillRect(x0, y, 150, 3 + k); g.fillRect(x0 + 40, y - 2, 70, 2); }
@@ -98,6 +119,9 @@ const Floresta = (() => {
     }
     // chão com capim balançando
     const chao = Math.round(H * .9); g.fillStyle = COR.chao; g.fillRect(0, chao, W, H - chao);
+    // a manada passando pelo chão, na frente das árvores
+    for (const m of manada) { m.x -= m.v; sprite(PASTOR[Math.floor(t * 4 + m.f) % 2].map(l => [...l].reverse().join("")), m.x - ox * .7, chao - 8, COR.manada, COR.olho2); }
+    manada = manada.filter(m => m.x > -20);
     for (let x = 0; x < W; x += 3) {
       const onda = Math.round(Math.sin(t * 2 + x * .15) * .9), alt = 2 + ((x * 7) % 3);
       g.fillStyle = (x % 9 === 0) ? COR.capim2 : COR.capim; g.fillRect(x + onda, chao - alt, 1, alt); g.fillRect(x, chao - 1, 1, 1);
@@ -117,7 +141,9 @@ const Floresta = (() => {
     if (agora - ultimo < 1000 / FPS) return;
     ultimo = agora; t += 1 / FPS;
     mx += (mxAlvo - mx) * .25;
-    if (t > proxWyv && !wyv) { wyv = { x: -30, y: H * (.12 + Math.random() * .16), v: 1.1 + Math.random() * .6 }; proxWyv = t + 30 + Math.random() * 30; }
+    if (t > proxWyv && !wyv) { wyv = { x: -30, y: H * (.12 + Math.random() * .16), v: 1.1 + Math.random() * .6 }; proxWyv = t + 18 + Math.random() * 20; }
+    if (t > proxBruto && !bruto) { bruto = { x: -34, v: .45 + Math.random() * .2, f: Math.random() * 6 }; proxBruto = t + 70 + Math.random() * 50; }
+    if (t > proxManada && !manada.length) { const n = 3 + Math.floor(Math.random() * 3); manada = Array.from({ length: n }, (_, i) => ({ x: W + 10 + i * (16 + Math.random() * 10), v: .8, f: i })); proxManada = t + 45 + Math.random() * 40; }
     if (t > proxAves) { const y = H * (.1 + Math.random() * .25); aves.push(...[0, 1, 2].map(i => ({ x: -6 - i * 5, y: y + i * 2, v: .7, f: i }))); proxAves = t + 14 + Math.random() * 20; }
     quadro();
   }

@@ -62,11 +62,13 @@ function criarJanela() {
 // --prints <pasta>: imagens de cada página, rolando até o fim (para conferir o visual)
 async function tirarPrints() {
   fs.mkdirSync(printsDir, { recursive: true });
+  // erros da página vão para console.txt (para achar uma aba que não montou)
+  win.webContents.on("console-message", (e, nivel, msg, linha, fonte) => { if (nivel >= 2) fs.appendFileSync(path.join(printsDir, "console.txt"), msg + " (" + fonte + ":" + linha + ")\n"); });
   const espera = ms => new Promise(r => setTimeout(r, ms));
   const js = c => win.webContents.executeJavaScript(c);
   await espera(6000);
   let n = 0;
-  for (const p of ["jogos", "inicio", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"]) {
+  for (const p of ["jogos", "inicio", "online", "cacada", "graficos", "fps", "controles", "mods", "collabs", "sobre"]) {
     win.webContents.send("nav", p);
     await espera(3500);
     const sel = JSON.stringify("#pg-" + p);
@@ -135,6 +137,7 @@ function registrar() {
   h("mods:ligar", (n, l) => mods.ligarMod(dir, n, l));
   h("plugins", () => dir ? mods.plugins(dir) : {});
   h("plugins:ligar", (q, l) => mods.ligarPlugin(dir, q, l));
+  h("plugins:dano", (k, l) => dir ? mods.opcaoDano(dir, k, l) : true);
   h("layouts", () => dir ? mods.layouts(dir) : { atual: "PS", nomes: "EN", instalados: {}, instaladosPT: {} });
   h("layouts:trocar", async l => { if (await jogo.jogoAberto(dir)) return { erro: "Feche o jogo para trocar os botões." }; try { mods.trocarLayout(dir, l); } catch (e) { return { erro: e.message }; } return mods.layouts(dir); });
   h("layouts:nomes", async n => { if (await jogo.jogoAberto(dir)) return { erro: "Feche o jogo para trocar a tradução." }; try { mods.trocarNomes(dir, n); } catch (e) { return { erro: e.message }; } return mods.layouts(dir); });
@@ -192,6 +195,7 @@ app.whenReady().then(async () => {
   servir();
   registrar();
   criarJanela();
+  if (dir) mods.atualizarPlugins(dir);
   if (dir) { await rede.iniciar(porta()); atualizarPresenca(); setInterval(atualizarPresenca, 3000); }
 });
 app.on("window-all-closed", () => { salvarIniJa(); rede.parar(); app.quit(); });

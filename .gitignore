@@ -28,3 +28,6 @@ versao_port.txt
 # app Electron (dependências e pacotes montados)
 node_modules/
 app/dist/
+
+# plugins Forge que vão dentro do launcher montado (binários de terceiros: não no código)
+app/src/main/recursos/*.nro

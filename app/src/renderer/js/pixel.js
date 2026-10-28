@@ -4,7 +4,8 @@
 const Pixel = (() => {
   // ---- sprites: cada letra é uma cor da paleta, "." é vazio
   const PAL = { o: "#050907", T: "#334535", t: "#2c5a43", L: "#cfe3b5", M: "#7f955c", W: "#8a5a34", w: "#6b4426", G: "#e9ba6f",
-    g: "#b5843a", S: "#e9ba6f", s: "#c99a4a", R: "#e45f38", r: "#ff8a5c", P: "#c9bd98", B: "#a1502a", b: "#d8cda6", c: "#7a3a1e" };
+    g: "#b5843a", S: "#e9ba6f", s: "#c99a4a", R: "#e45f38", r: "#ff8a5c", P: "#c9bd98", B: "#a1502a", b: "#d8cda6", c: "#7a3a1e",
+    h: "#18231b", H: "#b4552f", k: "#8f9a86", K: "#d9e2cf" };
   const SPRITES = {
     tela: [[
       "................", ".oooooooooooooo.", ".oTTTTTTTTTTTTo.", ".oTttttttttttTo.", ".oTtLLttttttttTo".slice(0, 16), ".oTtLtttttttLTo.", ".oTttttttttttTo.",
@@ -63,6 +64,11 @@ const Pixel = (() => {
       ["....cBBBBc....", "..cBBBBBBBBc..", ".cBBBBBBBBBBc.", ".cBbBBBBBBBBc.", "..cBBBBBBbBc..", "....cBBBBc...."],
       ["....cBBBBc....", "..cBBbBBBBBc..", ".cBBBBBBBBBBc.", ".cBBBBBBBBBBc.", "..cBBBBBBBBc..", "....cBBbBc...."],
     ];
+    // ao lado do fogo: um caçador sentado no tronco (o lado do fogo iluminado) e a espada grande fincada no chão
+    const CACADOR = ["....hhhh....", "...hhhhhH...", "...hhhhhH...", "....hhhH....", "...hhhhhhH..", "..hhhhhhhhH.", "..hhhhhhhhhH",
+      "..hhhhhhh.HH", "..hhhhhhh...", "...hhhhhhhH.", "...hhhhhhhhH", "...hh....hhH"];
+    const TRONCO = ["..ooooooooo.", "..oWWwWWWWo.", "..ooooooooo."];
+    const ESPADA = ["..oo..", ".oWWo.", "..oo..", "ogggggo", "..ok..", "..ok..", "..ok..", "..ok..", "..ok..", "..ok..", "..ok..", "..ok..", "..ok..", "..ok..", "...o.."];
     function quadro() {
       t++;
       alimentar(bemPassada > 0); espalhar();
@@ -86,6 +92,15 @@ const Pixel = (() => {
       g.fillStyle = "#5a3820"; for (let i = 0; i < 26; i += 3) { g.fillRect(W / 2 - 13 + i, ly + Math.round(i * .25), 1, 1); g.fillRect(W / 2 + 13 - i, ly + Math.round(i * .25), 1, 1); }
       g.fillStyle = "#4b5546"; [-20, -15, -9, 9, 15, 20].forEach((dx, k) => { g.fillRect(W / 2 + dx - 2, H - 7 + (k % 2), 4, 3); });
       g.fillStyle = "#6b7663"; [-20, -15, -9, 9, 15, 20].forEach((dx, k) => { g.fillRect(W / 2 + dx - 2, H - 7 + (k % 2), 3, 1); });
+      // o caçador respira (o tronco sobe 1 pixel) e a luz do fogo tremula no lado dele
+      const cx = 10, cy = H - 18, resp = (t % 42) < 21 ? 0 : 1;
+      desenhar(g, TRONCO, cx, H - 6);
+      const lume = PAL.H; PAL.H = Math.random() < .2 ? "#e45f38" : "#b4552f";
+      desenhar(g, CACADOR.slice(0, 9), cx, cy - 3 + resp); desenhar(g, CACADOR.slice(9), cx, cy + 6);
+      PAL.H = lume;
+      // a espada: um brilho desce pela lâmina de vez em quando
+      const sx = W - 18, sy = H - 21; desenhar(g, ESPADA, sx, sy);
+      const b = t % 60; if (b < 11) { g.fillStyle = "#f6eed2"; g.fillRect(sx + 3, sy + 4 + b, 1, 1); g.globalAlpha = .4; g.fillRect(sx + 2, sy + 4 + b, 1, 1); g.globalAlpha = 1; }
       // espeto com a carne girando (uma das marcas do jogo)
       const ey = fy0 + 2;
       g.fillStyle = "#4a3320"; g.fillRect(W / 2 - 16, ey - 2, 2, 22); g.fillRect(W / 2 + 15, ey - 2, 2, 22);

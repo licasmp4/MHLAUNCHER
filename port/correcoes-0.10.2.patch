@@ -1,7 +1,16 @@
 diff --git a/runtime/config.c b/runtime/config.c
-index d9f290d..db5fc0e 100644
+index d9f290d..f2325ed 100644
 --- a/runtime/config.c
 +++ b/runtime/config.c
+@@ -16,7 +16,7 @@
+ #include "config.h"
+ #include "rt.h"
+ 
+-Config g_config = {DISPLAY_BORDERLESS, 1920, 1080, 0, 0, 60, 1, 1, 1, FACE_POSITION, 39500, "", 0, 1, 1, {{1, 1, 1, 1}, 2}, 1.0f, 0.0f, 1.0f, UI_CENTER, 1, 0, FSR_NATIVE, 0.8f, 1, 0.9f, 1, FSR_UP_3};
++Config g_config = {DISPLAY_BORDERLESS, 1920, 1080, 0, 0, 60, 1, 1, 1, FACE_POSITION, 39500, "", 0, 1, 1, {{1, 1, 1, 1}, 2}, 1.0f, 0.0f, 1.0f, UI_CENTER, 1, 0, FSR_NATIVE, 0.8f, 1, 0.9f, 1, FSR_UP_3, {{0}}, 16, 0.35f, 0.15f, 1.0f, 1.0f};
+ uint32_t g_render_size[2] = {1920, 1080};
+ float g_render_aspect = 16.0f / 9.0f;
+ float g_fov_scale = 1.0f;
 @@ -121,6 +121,36 @@ static const char DEFAULT_INI[] =
      "; Default: 1.0\n"
      "MouseSensitivity = 1.0\n"
@@ -39,7 +48,46 @@ index d9f290d..db5fc0e 100644
      "[Multiplayer]\n"
      "; Which port to host/join hubs on (TCP and UDP)\n"
      "; Default: 39500\n"
-@@ -254,6 +284,52 @@ static bool parse_fsr_quality(const char *v, int *out) {
+@@ -159,11 +189,37 @@ static const char DEFAULT_INI[] =
+     "; Default: 2.0\n"
+     "HubHP = 2.0\n"
+     "\n"
++    "[Difficulty]\n"
++    "; Large monster HP in Village quests played at a village (the Hub's are in [Monster HP]): 0.6 = 60%, 1 = the game\n"
++    "; Default: 1.0\n"
++    "VillageHP = 1.0\n"
++    "\n"
++    "; Large monsters' attack in every quest: 0.5 = they hit half as hard, 1 = the game. Only attack changes.\n"
++    "; In a hub each game uses its own setting for the hits its hunter takes: set it the same for a fair hunt.\n"
++    "; Default: 1.0\n"
++    "MonsterAttack = 1.0\n"
++    "\n"
+     "[Bonus Content]\n"
+     "; If enabled, the free online downloadable content (Event Quests, item packs, Palicoes) are automatically copied from the provided savegame inside the `bonus/` folder into your own savegame.\n"
+     "; This only happens if your savegame hasn't received any downloadable content yet.\n"
+     "; Default: On\n"
+-    "BonusContent = On\n";
++    "BonusContent = On\n"
++    "\n"
++    "[Enhancements]\n"
++    "; Anisotropic texture filtering: ground and walls stay sharp at a distance and at an angle\n"
++    "; Game (as the game asks), 2, 4, 8, 16\n"
++    "; Default: 16\n"
++    "Anisotropic = 16\n"
++    "\n"
++    "; Sharpening of the final picture (contrast adaptive, like AMD CAS); with FSR on, FSR's own Sharpness is used\n"
++    "; Between 0 (off) to 1\n"
++    "; Default: 0.35\n"
++    "Sharpen = 0.35\n"
++    "\n"
++    "; Livelier colours: raises the saturation of dull colours more than of strong ones (skin tones stay natural)\n"
++    "; Between 0 (off) to 1\n"
++    "; Default: 0.15\n"
++    "Vibrance = 0.15\n";
+ 
+ static void ini_path(char *buf, size_t size) {
+     const char *e = getenv("MHGU_CONFIG");
+@@ -254,6 +310,52 @@ static bool parse_fsr_quality(const char *v, int *out) {
  static int desktop_w, desktop_h;
  static bool render_auto = true;
  
@@ -92,7 +140,7 @@ index d9f290d..db5fc0e 100644
  static void set_key(const char *key, char *val, int line) {
      char k[64], v[256];
      snprintf(k, sizeof k, "%s", key);
-@@ -261,6 +337,11 @@ static void set_key(const char *key, char *val, int line) {
+@@ -261,6 +363,11 @@ static void set_key(const char *key, char *val, int line) {
      squash(k);
      squash(v);
      bool ok = true;
@@ -104,7 +152,31 @@ index d9f290d..db5fc0e 100644
      if (!strcmp(k, "mode")) {
          if (!strcmp(v, "fullscreen") || !strcmp(v, "exclusive") || !strcmp(v, "exclusivefullscreen"))
              g_config.display_mode = DISPLAY_FULLSCREEN;
-@@ -452,6 +533,25 @@ void config_load(void) {
+@@ -295,6 +402,13 @@ static void set_key(const char *key, char *val, int line) {
+         if (!strcmp(v, "on") || !strcmp(v, "1") || !strcmp(v, "true") || !strcmp(v, "yes")) g_config.fxaa = 1;
+         else if (!strcmp(v, "off") || !strcmp(v, "0") || !strcmp(v, "false") || !strcmp(v, "no")) g_config.fxaa = 0;
+         else ok = false;
++    } else if (!strcmp(k, "sharpen") || !strcmp(k, "vibrance")) {
++        float f = strtof(v, NULL);
++        if ((ok = f >= 0.0f && f <= 1.0f)) *(k[0] == 's' ? &g_config.sharpen : &g_config.vibrance) = f;
++    } else if (!strcmp(k, "anisotropic")) {
++        int n = atoi(v);
++        if (!strcmp(v, "game") || !strcmp(v, "off") || !strcmp(v, "0")) g_config.aniso = 0;
++        else if ((ok = n == 2 || n == 4 || n == 8 || n == 16)) g_config.aniso = n;
+     } else if (!strcmp(k, "fsr")) {
+         if (!strcmp(v, "on") || !strcmp(v, "1") || !strcmp(v, "true") || !strcmp(v, "yes")) g_config.fsr = 1;
+         else if (!strcmp(v, "off") || !strcmp(v, "0") || !strcmp(v, "false") || !strcmp(v, "no")) g_config.fsr = 0;
+@@ -348,6 +462,9 @@ static void set_key(const char *key, char *val, int line) {
+         if (!strcmp(v, "on") || !strcmp(v, "1") || !strcmp(v, "true") || !strcmp(v, "yes")) g_config.village_in_hub = 1;
+         else if (!strcmp(v, "off") || !strcmp(v, "0") || !strcmp(v, "false") || !strcmp(v, "no")) g_config.village_in_hub = 0;
+         else ok = false;
++    } else if (!strcmp(k, "villagehp") || !strcmp(k, "monsterattack")) {
++        float f[4];
++        if ((ok = parse_factors(v, f) == 1)) *(k[0] == 'v' ? &g_config.village_hp : &g_config.monster_attack) = f[0];
+     } else if (!strcmp(k, "hubhp")) {
+         float f[4];
+         if ((ok = parse_factors(v, f) == 1)) g_config.hp.village = f[0];
+@@ -452,6 +569,25 @@ void config_load(void) {
          append_missing_sections(path, seen);
      }
  
@@ -131,7 +203,7 @@ index d9f290d..db5fc0e 100644
      desktop_w = dm ? dm->w : 1920, desktop_h = dm ? dm->h : 1080;
      if (!g_config.width) g_config.width = desktop_w, g_config.height = desktop_h;
 diff --git a/runtime/config.h b/runtime/config.h
-index 2f039a6..7370a74 100644
+index 2f039a6..600bfe8 100644
 --- a/runtime/config.h
 +++ b/runtime/config.h
 @@ -5,6 +5,16 @@
@@ -151,14 +223,73 @@ index 2f039a6..7370a74 100644
  // [Monster HP]: factors on the HP multiplier of Hub-type quests' large monsters
  #define HP_QUESTS_MAX 256
  #define HP_SCALE_MIN 0.05f
-@@ -43,6 +53,7 @@ typedef struct {
+@@ -43,6 +53,10 @@ typedef struct {
      float fsr_reactive;       // FSR: reactive mask strength on the game's moving-object mask, 0 (off) .. 1
      int fsr_animsurf;         // FSR: surfaces animated through their texture (banners, water): 1 detected, 0 off
      int fsr_upscaler;         // [Upscaler] Upscaler: FSR_UP_3 (FSR 3.1) or FSR_UP_4 (FSR 4, runtime/nvn/vulkan/fsr4.c)
 +    uint16_t binds[ACT_COUNT][BIND_MAX];  // [Keyboard]: up to BIND_MAX inputs (IN_*, scancodes) each, 0 = none
++    int aniso;                // [Enhancements] Anisotropic: at least this on mipmapped textures, 0 = the game's
++    float sharpen, vibrance;  // [Enhancements] Sharpen, Vibrance: on the final picture (vulkan/exec.c), 0 .. 1
++    float village_hp, monster_attack;  // [Difficulty] VillageHP, MonsterAttack (runtime/hle/hpscale.c)
  } Config;
  enum { UI_CENTER = 1, UI_21_9, UI_32_9, UI_EDGES };  // the middle 16:9, 21:9, 32:9, the picture's sides
  enum { FSR_UP_3, FSR_UP_4 };  // [Upscaler] Upscaler
+diff --git a/runtime/hle/hpscale.c b/runtime/hle/hpscale.c
+index d731d28..03be3d7 100644
+--- a/runtime/hle/hpscale.c
++++ b/runtime/hle/hpscale.c
+@@ -88,16 +88,37 @@ static float village_factor(void) {
+ static float f32(uint32_t w) { float f; memcpy(&f, &w, 4); return f; }
+ static uint32_t u32f(float f) { uint32_t w; memcpy(&w, &f, 4); return w; }
+ 
++// A copy of the row with one of its floats scaled (callers read their row right away).
++static uint32_t scaled_row(uint32_t row, unsigned col, float f) {
++    uint32_t copy = g_ring + ROW_SIZE * (__atomic_fetch_add(&g_ring_next, 1, __ATOMIC_RELAXED) % RING);
++    memcpy(G2H(copy), G2H(row), ROW_SIZE);
++    ST32(copy + 4 * col, u32f(f32(LD32(row + 4 * col)) * f));
++    return copy;
++}
++
+ static void nando_row(Cpu *c) {
+     uint32_t em = c->r[0], column = c->r[1];
+     fnhook_call_original(c, FN_NANDO_ROW);
+-    if (column != 0) return;
++    if (column > 1) return;
+     uint32_t row = c->r[0], sen = LD32(G_SENEMY), tbl = sane(sen) ? LD32(sen + 0x257c) : 0;
+     // (outside quests the getter gives a fixed row, not one of the table's)
+     if (!sane(tbl) || row < LD32(tbl + 0x64) || row >= LD32(tbl + 0x64) + LD32(tbl + 0x68) * ROW_SIZE) return;
+     uint32_t q = quest_no();
++    if (column == 1) {  // attack ([Difficulty] MonsterAttack): every quest, this game's own setting
++        if (!q || g_config.monster_attack == 1.0f) return;
++        LOG("[hpscale] quest %u: monster attack x%.2f (row x%.2f)\n", q, g_config.monster_attack, f32(LD32(row + 4)));
++        c->r[0] = scaled_row(row, 1, g_config.monster_attack);
++        return;
++    }
+     bool from_hub = g_town == 0 || g_town == 7;
+-    if (!q || (village_quest(q) && !from_hub)) return;
++    if (q && village_quest(q) && !from_hub) {  // a Village quest at a village: [Difficulty] VillageHP
++        if (g_config.village_hp != 1.0f) {
++            LOG("[hpscale] quest %u (Village): HP x%.2f\n", q, g_config.village_hp);
++            c->r[0] = scaled_row(row, 0, g_config.village_hp);
++        }
++        return;
++    }
++    if (!q) return;
+     int n = hunters();
+     bool host;
+     float v = village_quest(q) ? village_factor() : 1.0f, f = v * factor(q, n, &host), hp = f32(LD32(row));
+@@ -107,10 +128,7 @@ static void nando_row(Cpu *c) {
+         v != 1.0f ? " (Village quest from the Hub)" : "", host ? " (the hub host's setting)" : "", hp * f);
+     if (ENV("MHGU_LOG_HPSCALE")) g_watch = info, g_watch_at = plat_now_ns();
+     if (f == 1.0f) return;
+-    uint32_t copy = g_ring + ROW_SIZE * (__atomic_fetch_add(&g_ring_next, 1, __ATOMIC_RELAXED) % RING);
+-    memcpy(G2H(copy), G2H(row), ROW_SIZE);
+-    ST32(copy, u32f(hp * f));
+-    c->r[0] = copy;
++    c->r[0] = scaled_row(row, 0, f);
+ }
+ 
+ // ---- the host's settings to the others in the hub
 diff --git a/runtime/host_input.c b/runtime/host_input.c
 index e64b96d..5881ab9 100644
 --- a/runtime/host_input.c
@@ -330,3 +461,143 @@ index 4927570..75b2873 100644
      if (g_master) return 1;  // (a moment of two masters: keep ours)
      uint32_t spl = LD32(G_SPLAYER);
      int sender = LD8(c->r[2] + 1);
+diff --git a/runtime/nvn/vulkan/exec.c b/runtime/nvn/vulkan/exec.c
+index 1bd27c7..a265368 100644
+--- a/runtime/nvn/vulkan/exec.c
++++ b/runtime/nvn/vulkan/exec.c
+@@ -3091,7 +3091,7 @@ static VkPipeline present_pipeline(void) {
+         VkDescriptorSetLayoutBinding b = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL};
+         VkDescriptorSetLayoutCreateInfo li = {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, .bindingCount = 1, .pBindings = &b};
+         VK_CHECK(vkCreateDescriptorSetLayout(g_vk.dev, &li, NULL, &present_set_layout));
+-        VkPushConstantRange r = {VK_SHADER_STAGE_VERTEX_BIT, 0, 32};
++        VkPushConstantRange r = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 48};
+         VkPipelineLayoutCreateInfo ci = {.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, .setLayoutCount = 1,
+                                          .pSetLayouts = &present_set_layout, .pushConstantRangeCount = 1, .pPushConstantRanges = &r};
+         VK_CHECK(vkCreatePipelineLayout(g_vk.dev, &ci, NULL, &present_layout));
+@@ -3145,8 +3145,10 @@ void vk_present_draw(VkCommandBuffer cb, TexBackend *b, float vx, float vy, floa
+     vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, present_layout, 0, 1, &ds, 0, NULL);
+     VkViewport vp = {vx, vy, vw, vh, 0, 1};
+     vkCmdSetViewport(cb, 0, 1, &vp);
+-    float pv[8] = {nvn_window_origin() == 0 ? 1.0f : 0.0f, 0, 0, 0, 0, 0, 1, 1};  // (flip, crop origin / size)
+-    vkCmdPushConstants(cb, present_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 32, pv);
++    // (flip, crop origin / size; [Enhancements] sharpening (FSR on: its own instead) and vibrance, config.c)
++    float pv[12] = {nvn_window_origin() == 0 ? 1.0f : 0.0f, 0, 0, 0, 0, 0, 1, 1,
++                    g_fsr_on ? 0.0f : g_config.sharpen, g_config.vibrance, 0, 0};
++    vkCmdPushConstants(cb, present_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 48, pv);
+     vkCmdDraw(cb, 3, 1, 0, 0);
+ }
+ 
+diff --git a/runtime/nvn/vulkan/shaders.c b/runtime/nvn/vulkan/shaders.c
+index 54bc4b1..2399407 100644
+--- a/runtime/nvn/vulkan/shaders.c
++++ b/runtime/nvn/vulkan/shaders.c
+@@ -289,10 +289,29 @@ static const char *builtin_src(const char *name, int *stage) {
+     if (!strcmp(name, "present.frag")) {
+         *stage = STAGE_FRAGMENT;
+         return "#version 450\n"
++               // pc.fx: x sharpening 0..1 (AMD's contrast adaptive sharpening on the 4 neighbours), y vibrance 0..1
+                "layout(set = 0, binding = 0) uniform sampler2D t;\n"
++               "layout(push_constant) uniform P { vec4 a; vec4 crop; vec4 fx; } pc;\n"
+                "layout(location = 0) in vec2 uv;\n"
+                "layout(location = 0) out vec4 o;\n"
+-               "void main() { o = vec4(texture(t, uv).rgb, 1.0); }\n";
++               "void main() {\n"
++               "  vec3 c = texture(t, uv).rgb;\n"
++               "  if (pc.fx.x > 0.0) {\n"
++               "    vec2 px = 1.0 / vec2(textureSize(t, 0));\n"
++               "    vec3 n = texture(t, uv - vec2(0.0, px.y)).rgb, s = texture(t, uv + vec2(0.0, px.y)).rgb;\n"
++               "    vec3 w = texture(t, uv - vec2(px.x, 0.0)).rgb, e = texture(t, uv + vec2(px.x, 0.0)).rgb;\n"
++               "    vec3 mn = min(c, min(min(n, s), min(w, e))), mx = max(c, max(max(n, s), max(w, e)));\n"
++               "    vec3 amp = sqrt(clamp(min(mn, 1.0 - mx) / max(mx, vec3(1e-4)), 0.0, 1.0));\n"
++               "    vec3 k = amp * (-1.0 / mix(8.0, 5.0, pc.fx.x));\n"
++               "    c = clamp((c + (n + s + w + e) * k) / (1.0 + 4.0 * k), 0.0, 1.0);\n"
++               "  }\n"
++               "  if (pc.fx.y > 0.0) {\n"
++               "    float l = dot(c, vec3(0.299, 0.587, 0.114));\n"
++               "    float sat = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));\n"
++               "    c = clamp(mix(vec3(l), c, 1.0 + pc.fx.y * (1.0 - sat)), 0.0, 1.0);\n"
++               "  }\n"
++               "  o = vec4(c, 1.0);\n"
++               "}\n";
+     }
+     if (!strcmp(name, "clear.vert")) {
+         *stage = STAGE_VERTEX;
+diff --git a/runtime/nvn/vulkan/textures.c b/runtime/nvn/vulkan/textures.c
+index b6e3aa4..85586b6 100644
+--- a/runtime/nvn/vulkan/textures.c
++++ b/runtime/nvn/vulkan/textures.c
+@@ -756,7 +756,9 @@ VkSampler vk_sampler(NvnSamplerDesc *d) {
+     if (mf > 1) si.mipLodBias += g_fsr_lod_bias;  // (FSR: textures as sharp as at the output size; config.c)
+     const char *force = getenv("MHGU_TEX_LOD");  // (debug) mipmapped samplers: only this level (shows mip contents)
+     if (force && mf > 1) { si.minLod = si.maxLod = (float)atof(force); si.mipLodBias = 0; }
+-    if (d->max_aniso > 1) { si.anisotropyEnable = VK_TRUE; si.maxAnisotropy = fminf(d->max_aniso, 16); }
++    float aniso = d->max_aniso;  // ([Enhancements] Anisotropic, config.c: at least that on mipmapped textures)
++    if (g_config.aniso > aniso && mf > 1 && si.minFilter == VK_FILTER_LINEAR && !d->compare_mode) aniso = g_config.aniso;
++    if (aniso > 1) { si.anisotropyEnable = VK_TRUE; si.maxAnisotropy = fminf(aniso, 16); }
+     if (d->compare_mode) { si.compareEnable = VK_TRUE; si.compareOp = compare_op(d->compare_func); }
+     VkSamplerCustomBorderColorCreateInfoEXT cb = {.sType = VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT};
+     if (border) {  // the standard colours; others need VK_EXT_custom_border_color (else the nearest standard one)
+diff --git a/runtime/platform/windows.c b/runtime/platform/windows.c
+index 117576e..2949b48 100644
+--- a/runtime/platform/windows.c
++++ b/runtime/platform/windows.c
+@@ -141,7 +141,8 @@ void plat_standalone(void) {
+         if (s) { *s = 0; SetCurrentDirectoryA(exe); }
+     }
+     DWORD ids[2];
+-    if (GetConsoleProcessList(ids, 2) == 1) {  // (from a terminal the terminal shares it: keep logging there)
++    if (GetConsoleProcessList(ids, 2) <= 1) {  // (from a terminal the terminal shares it: keep logging there; started
++        // with no console at all, as the launcher does, the log goes to log.txt too)
+         FreeConsole();
+         if (freopen("log.txt", "w", stderr)) { setvbuf(stderr, NULL, _IONBF, 0); g_own_log = true; }
+     }
+diff --git a/runtime/ui.c b/runtime/ui.c
+index 1b8d176..b8d23e6 100644
+--- a/runtime/ui.c
++++ b/runtime/ui.c
+@@ -5,6 +5,9 @@
+ #include <stdlib.h>
+ 
+ #include <SDL3/SDL.h>
++#ifdef _WIN32
++#include <windows.h>
++#endif
+ 
+ #include "config.h"
+ #include "mods.h"
+@@ -61,6 +64,27 @@ static void set_fullscreen(bool on) {
+     if (on) SDL_HideCursor(); else SDL_ShowCursor();
+ }
+ 
++// The window's icon (taskbar, Alt+Tab): mhgu.ico beside the game (the installer makes it from the player's own copy),
++// else mhlauncher.ico. The executable carries no icon of its own.
++static void set_icon(void) {
++#ifdef _WIN32
++    HWND hwnd = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
++    if (!hwnd) return;
++    static const char *const files[] = {"mhgu.ico", "mhlauncher.ico"};
++    for (int i = 0; i < 2; i++) {
++        HICON big = LoadImageA(NULL, files[i], IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON),
++                               LR_LOADFROMFILE);
++        HICON sm = LoadImageA(NULL, files[i], IMAGE_ICON, GetSystemMetrics(SM_CXSMICON),
++                                 GetSystemMetrics(SM_CYSMICON), LR_LOADFROMFILE);
++        if (!big && !sm) continue;
++        SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)(big ? big : sm));
++        SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)(sm ? sm : big));
++        LOG("[ui] window icon %s\n", files[i]);
++        return;
++    }
++#endif
++}
++
+ void ui_init(void) {
+     if (!SDL_Init(SDL_INIT_VIDEO)) FATAL("SDL_Init: %s\n", SDL_GetError());
+     config_load();
+@@ -77,6 +101,7 @@ void ui_init(void) {
+     if (getenv("MHGU_HIDDEN")) flags |= SDL_WINDOW_HIDDEN;
+     window = SDL_CreateWindow("Monster Hunter Generations Ultimate", win_w, win_h, flags);
+     if (!window) FATAL("SDL_CreateWindow: %s\n", SDL_GetError());
++    set_icon();
+     if (g_config.display_mode != DISPLAY_WINDOWED) set_fullscreen(true);
+ }
+ 

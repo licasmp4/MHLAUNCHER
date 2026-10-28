@@ -19,7 +19,8 @@ Paginas.mods = {
         seg([["EN", "Em inglês"], ["PT", "Tudo em português"]], lay.nomes, async v => {
           const r = await api.layoutsNomes(v); if (r && r.erro) { toast(r.erro); return; } pintaEx(v); toast(v === "PT" ? "Tudo em português ao abrir o jogo" : "Nomes em inglês ao abrir o jogo");
         }), "globo"), exemplo);
-    c.append(cabecalho("mods", "Mods e Cheats", "Ligue e desligue sem mexer em pastas. Vale ao abrir o jogo.", [1, 21], "respira"), traducao,
+    const hud = await cartaoHud(await api.plugins());
+    c.append(cabecalho("mods", "Mods e Cheats", "Ligue e desligue sem mexer em pastas. Vale ao abrir o jogo.", [1, 21], "respira"), hud, traducao,
       cartao(secao("Mods", botao("Abrir pasta", () => api.abrir("mods"), "peq fantasma", "pasta")), lista),
       cartao(secao("Cheats · .txt da versão 1.4.0", botao("Abrir pasta", () => api.abrir("cheats"), "peq fantasma", "pasta")), cheats));
   },

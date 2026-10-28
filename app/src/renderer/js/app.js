@@ -11,7 +11,7 @@
   if (!temGU) $$("[data-gu]").forEach(e => e.hidden = true);
 
   // ---- páginas: a primeira já aparece, as outras montam logo depois (abrir fica rápido)
-  const ordem = temGU ? ["inicio", "jogos", "online", "cacada", "graficos", "fps", "controles", "mods", "sobre"] : ["jogos", "sobre"];
+  const ordem = temGU ? ["inicio", "jogos", "online", "cacada", "graficos", "fps", "controles", "mods", "collabs", "sobre"] : ["jogos", "sobre"];
   const montadas = {};
   async function montar(p) { if (montadas[p]) return montadas[p]; montadas[p] = (async () => { const c = $("#pg-" + p + " .conteudo"); try { await Paginas[p].montar(c); } catch (e) { console.error(p, e); c.append(el("div", { class: "aviso" }, el("div", { class: "t" }, el("b", {}, "Algo deu errado nesta página"), el("span", {}, String(e.message || e))))); } numerar(c); })(); return montadas[p]; }
 

@@ -58,9 +58,18 @@ Paginas.graficos = {
       linha("Anti-serrilhado (MSAA)", "Suaviza as bordas. Pesa em placas antigas.", controles.msaa, "serrilha"),
       linha("FXAA", "Filtro leve de bordas do próprio jogo (deixa um pouco borrado).", controles.fxaa, "filtro"),
       linha("Campo de visão (FOV)", "90° é o padrão do jogo. Limite: 70° a 120°.", el("div", { style: { width: "min(420px, 46vw)" } }, fovF, atalhos), "fov"));
+    // melhorias do port ([Enhancements]): filtragem anisotrópica, nitidez e cor da imagem final
+    const aniso = await ini.get("Enhancements", "Anisotropic", "16");
+    const nit = +(await ini.get("Enhancements", "Sharpen", "0.35")), cor = +(await ini.get("Enhancements", "Vibrance", "0.15"));
+    const pct = x => Math.round(x * 100) + "%";
+    const melhor = cartao(secao("Melhorias de imagem"),
+      linha("Filtragem de texturas", "Chão e paredes nítidos de longe e de lado. 16x quase não pesa.", seg([["Game", "Do jogo"], ["4", "4x"], ["8", "8x"], ["16", "16x"]], aniso, v => ini.set("Enhancements", "Anisotropic", v)), "nitido"),
+      linha("Nitidez", "Realça os detalhes sem serrilhar (como o AMD CAS). Com FSR ligado, vale a nitidez do FSR.", el("div", { style: { width: "min(420px, 46vw)" } }, faixa(0, 1, .05, isNaN(nit) ? .35 : nit, pct, x => ini.set("Enhancements", "Sharpen", x.toFixed(2)))), "filtro"),
+      linha("Cores vivas", "Deixa as cores apagadas mais vivas sem estourar a pele e o céu.", el("div", { style: { width: "min(420px, 46vw)" } }, faixa(0, 1, .05, isNaN(cor) ? .15 : cor, pct, x => ini.set("Enhancements", "Vibrance", x.toFixed(2)))), "olho"),
+      el("div", { class: "dica", style: { paddingTop: "8px" } }, "Vale ao abrir o jogo."));
 
     c.append(cabecalho("graficos", "Gráficos", "Tela, resolução e qualidade da imagem.", [4, 27], "olho"),
-      secao("Perfil"), el("div", { class: "grade g3" }, ops), placaTxt, tela, qual);
+      secao("Perfil"), el("div", { class: "grade g3" }, ops), placaTxt, tela, qual, melhor);
     tela.style.marginTop = "20px";
     busca.registrar("Perfil Leve Equilibrado Ultra", ops[0]);
     marcar();

@@ -426,3 +426,15 @@ nav button.tem-novo::after { content: ""; position: absolute; right: 12px; top: 
 #pg-sobre .cartao .linha + .linha { border-top: 2px solid #a89f7d !important; }
 #pg-sobre .cartao .chip-ic { background: #b5aa86 !important; border-color: #8f8566 !important; color: #5c3a1e !important; }
 #pg-sobre .cartao .btn:not(.primario) { background: #3b2414; border-color: #1a1008; color: #f3ead2; }
+
+/* ---- Collabs: uma carta por série, cor da série na borda esquerda */
+.collab { border-left: 6px solid var(--c, var(--brasa)); display: flex; flex-direction: column; gap: 6px; }
+.collab-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.collab-topo b { font: 400 20px var(--display); color: var(--tx); }
+.collab-missao { text-align: left; padding: 7px 10px; background: var(--s2, #1b291e); border: 2px solid var(--s3, #27372a); color: var(--tx2); cursor: pointer; }
+.collab-missao:hover { border-color: var(--c, var(--brasa)); color: var(--tx); }
+.collab-busca { height: 32px; padding: 0 10px; background: var(--s1, #111b15); border: 2px solid var(--s3, #27372a); width: min(320px, 50vw); }
+.collab-foto { height: 150px; margin: -4px -4px 6px; background: var(--s2, #1b291e) center / cover no-repeat; border-bottom: 2px solid var(--c, var(--brasa)); display: grid; place-items: center; image-rendering: auto; position: relative; }
+.collab-foto span { font: 400 64px var(--display); color: var(--c, var(--brasa)); opacity: .5; }
+.collab-foto.tem span { display: none; }
+.collab-foto.tem::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(9, 15, 11, .7)); }
