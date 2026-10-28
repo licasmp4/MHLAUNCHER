@@ -4,7 +4,7 @@ const fs = require("fs"), path = require("path");
 
 const NRO = { vida: "target_health_display.nro", dano: "attack_damage_display.nro" };
 const LAYOUTS = ["Xbox", "Nintendo"];
-const ehPacoteBotoes = n => n.includes("~Botoes");
+const ehPacoteBotoes = n => n.includes("~Botoes") || n.includes("~Nomes PT");
 
 const dirs = dir => ({ on: path.join(dir, "mods"), off: path.join(dir, "mods_desativados"), cheats: path.join(dir, "cheats") });
 const pastas = p => { try { return fs.readdirSync(p, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name); } catch { return []; } };
@@ -47,18 +47,23 @@ function ligarPlugin(dir, qual, ligar) {
 
 // botões no jogo: a tradução vem com PlayStation; Xbox e Nintendo são pacotes por cima
 const pastaLayout = (dir, l, ligado) => path.join(dirs(dir).on, (ligado ? "" : "_") + "MHGU pt-BR ~Botoes " + l);
+const pastaNomes = (dir, l, ligado) => path.join(dirs(dir).on, (ligado ? "" : "_") + "MHGU pt-BR ~Nomes PT " + l);
+const existe = (f, dir, l) => fs.existsSync(f(dir, l, true)) || fs.existsSync(f(dir, l, false));
 function layouts(dir) {
-  const inst = {}; let atual = "PS";
-  for (const l of LAYOUTS) { inst[l] = fs.existsSync(pastaLayout(dir, l, true)) || fs.existsSync(pastaLayout(dir, l, false)); if (fs.existsSync(pastaLayout(dir, l, true))) atual = l; }
-  return { atual, instalados: inst };
+  const inst = {}, instPT = {}; let atual = "PS", nomes = "EN";
+  for (const l of LAYOUTS) { inst[l] = existe(pastaLayout, dir, l); if (fs.existsSync(pastaLayout(dir, l, true))) atual = l; }
+  for (const l of ["PS", ...LAYOUTS]) { instPT[l] = existe(pastaNomes, dir, l); if (fs.existsSync(pastaNomes(dir, l, true))) { atual = l; nomes = "PT"; } }
+  return { atual, nomes, instalados: inst, instaladosPT: instPT };
 }
-function trocarLayout(dir, escolha) {
-  for (const l of LAYOUTS) {
-    const on = pastaLayout(dir, l, true), off = pastaLayout(dir, l, false);
-    if (l === escolha && fs.existsSync(off)) fs.renameSync(off, on);
-    if (l !== escolha && fs.existsSync(on)) fs.renameSync(on, off);
-  }
+// liga só o pacote certo para o estilo e os nomes escolhidos, desliga os outros
+function aplicar(dir, estilo, nomes) {
+  if (nomes === "PT" && !existe(pastaNomes, dir, estilo)) throw new Error("O pacote com tudo em português para " + estilo + " não está instalado.");
+  const liga = (f, l, on) => { const a = f(dir, l, !on), b = f(dir, l, on); if (fs.existsSync(a)) fs.renameSync(a, b); };
+  for (const l of LAYOUTS) liga(pastaLayout, l, nomes === "EN" && l === estilo);
+  for (const l of ["PS", ...LAYOUTS]) liga(pastaNomes, l, nomes === "PT" && l === estilo);
 }
+function trocarLayout(dir, escolha) { aplicar(dir, escolha, layouts(dir).nomes); }
+function trocarNomes(dir, nomes) { aplicar(dir, layouts(dir).atual, nomes); }
 
 // cheats: .txt na pasta cheats; desligado = "_" na frente do nome
 function cheats(dir) {
@@ -71,4 +76,4 @@ function ligarCheat(dir, arquivo, ligar) {
   if (de !== para && fs.existsSync(de)) fs.renameSync(de, para);
 }
 
-module.exports = { listar, ligarMod, plugins, ligarPlugin, layouts, trocarLayout, cheats, ligarCheat, dirs };
+module.exports = { listar, ligarMod, plugins, ligarPlugin, layouts, trocarLayout, trocarNomes, cheats, ligarCheat, dirs };

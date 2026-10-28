@@ -135,8 +135,9 @@ function registrar() {
   h("mods:ligar", (n, l) => mods.ligarMod(dir, n, l));
   h("plugins", () => dir ? mods.plugins(dir) : {});
   h("plugins:ligar", (q, l) => mods.ligarPlugin(dir, q, l));
-  h("layouts", () => dir ? mods.layouts(dir) : { atual: "PS", instalados: {} });
-  h("layouts:trocar", async l => { if (await jogo.jogoAberto(dir)) return { erro: "Feche o jogo para trocar os botões." }; mods.trocarLayout(dir, l); return mods.layouts(dir); });
+  h("layouts", () => dir ? mods.layouts(dir) : { atual: "PS", nomes: "EN", instalados: {}, instaladosPT: {} });
+  h("layouts:trocar", async l => { if (await jogo.jogoAberto(dir)) return { erro: "Feche o jogo para trocar os botões." }; try { mods.trocarLayout(dir, l); } catch (e) { return { erro: e.message }; } return mods.layouts(dir); });
+  h("layouts:nomes", async n => { if (await jogo.jogoAberto(dir)) return { erro: "Feche o jogo para trocar a tradução." }; try { mods.trocarNomes(dir, n); } catch (e) { return { erro: e.message }; } return mods.layouts(dir); });
   h("cheats", () => dir ? mods.cheats(dir) : []);
   h("cheats:ligar", (a, l) => mods.ligarCheat(dir, a, l));
   h("abrir", qual => {

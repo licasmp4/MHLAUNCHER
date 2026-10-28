@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 const chama = canal => (...a) => ipcRenderer.invoke(canal, ...a);
 const canais = ["estado", "pasta:escolher", "ini:get", "ini:set", "ini:restaurar", "config:get", "config:set", "jogo:aberto", "jogo:abrir", "saves", "saves:importar",
   "presenca:nome", "sistema:placa", "sistema:ips", "sistema:firewall", "sistema:liberar", "sistema:ipPublico", "mods", "mods:ligar", "plugins", "plugins:ligar",
-  "layouts", "layouts:trocar", "cheats", "cheats:ligar", "abrir", "externo", "copiar", "amigos", "amigos:salvar", "amigos:consultar", "atualiza:port",
+  "layouts", "layouts:trocar", "layouts:nomes", "cheats", "cheats:ligar", "abrir", "externo", "copiar", "amigos", "amigos:salvar", "amigos:consultar", "atualiza:port",
   "atualiza:portAplicar", "atualiza:launcher", "atualiza:correcao", "atualiza:launcherAplicar", "novidades", "diag", "cena:video", "logo", "cache:ler", "cache:salvar", "janela",
   "biblioteca", "biblioteca:procurar", "biblioteca:instalar", "biblioteca:abrir", "biblioteca:abrirPasta", "biblioteca:pasta", "biblioteca:capa"];
 const api = {};

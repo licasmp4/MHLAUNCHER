@@ -8,7 +8,18 @@ Paginas.mods = {
     if (!lista.children.length) lista.append(el("div", { class: "dica" }, "Nenhum mod. Cada mod é uma pasta com romfs dentro, em mods."));
     for (const ch of await api.cheats()) cheats.append(linha(ch.nome, null, chave(ch.ligado, v => { api.cheatsLigar(ch.arquivo, v); ch.arquivo = (v ? "" : "_") + ch.arquivo.replace(/^_/, ""); toast(v ? "Cheat ligado" : "Cheat desligado"); })));
     if (!cheats.children.length) cheats.append(el("div", { class: "dica" }, "Nenhum cheat. Coloque arquivos .txt (Ryujinx/Atmosphère, versão 1.4.0) na pasta."));
-    c.append(cabecalho("mods", "Mods e Cheats", "Ligue e desligue sem mexer em pastas. Vale ao abrir o jogo.", [1, 21], "respira"),
+    // a tradução: nomes de itens, joias e áreas em inglês (como nas wikis e nos guias) ou tudo em português
+    const lay = await api.layouts();
+    const temPT = lay.instaladosPT && lay.instaladosPT[lay.atual];
+    const exemplo = el("div", { class: "dica", style: { marginTop: "6px" } });
+    const pintaEx = n => { exemplo.textContent = n === "PT" ? "Exemplo: Poção, Megapoção, Pedra de Amolar, Minério de Ferro, Fronteira Jurássica." : "Exemplo: Potion, Mega Potion, Whetstone, Iron Ore, Jurassic Frontier. O resto do jogo fica em português."; };
+    pintaEx(lay.nomes);
+    const traducao = cartao(secao("Tradução"),
+      linha("Nomes de itens, joias e áreas", temPT ? "Em inglês ficam iguais aos das wikis e dos guias; em português, o jogo fica todo traduzido. Vale ao abrir o jogo." : "A versão com tudo em português não está instalada nesta cópia. Atualize pelo instalador novo.",
+        seg([["EN", "Em inglês"], ["PT", "Tudo em português"]], lay.nomes, async v => {
+          const r = await api.layoutsNomes(v); if (r && r.erro) { toast(r.erro); return; } pintaEx(v); toast(v === "PT" ? "Tudo em português ao abrir o jogo" : "Nomes em inglês ao abrir o jogo");
+        }), "globo"), exemplo);
+    c.append(cabecalho("mods", "Mods e Cheats", "Ligue e desligue sem mexer em pastas. Vale ao abrir o jogo.", [1, 21], "respira"), traducao,
       cartao(secao("Mods", botao("Abrir pasta", () => api.abrir("mods"), "peq fantasma", "pasta")), lista),
       cartao(secao("Cheats · .txt da versão 1.4.0", botao("Abrir pasta", () => api.abrir("cheats"), "peq fantasma", "pasta")), cheats));
   },
