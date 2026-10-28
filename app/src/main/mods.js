@@ -61,7 +61,7 @@ function iniDano() {
   try { return fs.readdirSync(b).filter(n => /^save_\d+$/.test(n)).map(n => path.join(b, n, "attack_damage_display.ini")); } catch { return []; }
 }
 function opcaoDano(dir, chave, ligar) {
-  if (!["hitmarker", "numbers"].includes(chave)) return;
+  if (!["hitmarker", "numbers", "sharpness", "meter"].includes(chave)) return;
   const re = new RegExp("^" + chave + "\\s*=.*$", "m");
   if (ligar === undefined) {
     for (const f of iniDano()) { try { const m = re.exec(fs.readFileSync(f, "utf8")); if (m) return /=\s*true/.test(m[0]); } catch {} }

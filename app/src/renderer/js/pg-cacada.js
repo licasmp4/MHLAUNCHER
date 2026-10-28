@@ -1,6 +1,7 @@
 // O HUD de caça (barra de vida, números de dano, hitmarker): o mesmo cartão nas abas Caçada e Mods.
 async function cartaoHud(pl) {
   const num = await api.pluginsDano("numbers"), hit = await api.pluginsDano("hitmarker");
+  const afi = await api.pluginsDano("sharpness"), med = await api.pluginsDano("meter");
   const dano = (k, v, t) => api.pluginsDano(k, v).then(() => toast(t));
   return cartao(secao("HUD de caça"),
     linha("Barra de vida do monstro", pl.vida.instalado ? "Mostra sozinha o monstro grande da área, com coroa e raiva. Marcando outro na câmera de alvo, ela segue o marcado." : "Plugin não instalado.",
@@ -9,6 +10,10 @@ async function cartaoHud(pl) {
       chave(pl.dano.ligado && num, v => dano("numbers", v, v ? "Números de dano ligados" : "Números de dano desligados"), !pl.dano.instalado), "dano"),
     linha("Hitmarker", pl.dano.instalado ? "Um X rápido no ponto de cada golpe que acerta (maior no ponto fraco)." : "Plugin não instalado.",
       chave(pl.dano.ligado && hit, v => dano("hitmarker", v, v ? "Hitmarker ligado" : "Hitmarker desligado"), !pl.dano.instalado), "olho"),
+    linha("Afiação exata", pl.dano.instalado ? "Os pontos de afiação da arma (atual / máximo) com uma barrinha, no canto da tela durante a missão." : "Plugin não instalado.",
+      chave(pl.dano.ligado && afi, v => dano("sharpness", v, v ? "Afiação exata ligada" : "Afiação exata desligada"), !pl.dano.instalado), "nitido"),
+    linha("Medidor de dano", pl.dano.instalado ? "O seu dano total na missão e o dano por segundo. Recomeça a cada missão." : "Plugin não instalado.",
+      chave(pl.dano.ligado && med, v => dano("meter", v, v ? "Medidor de dano ligado" : "Medidor de dano desligado"), !pl.dano.instalado), "dano"),
     el("div", { class: "dica", style: { paddingTop: "8px" } }, "Vale ao abrir o jogo. No jogo, Insert abre o menu Forge > Plugin UI (posição, cores e tamanho)."));
 }
 
