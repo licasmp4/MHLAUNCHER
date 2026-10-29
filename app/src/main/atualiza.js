@@ -86,16 +86,39 @@ async function aplicarCorrecao(dir, c, progresso) {
   fs.writeFileSync(path.join(dir, "versao_licas.txt"), String(c.n));
 }
 
-// troca o próprio launcher: no Windows o .exe portátil em uso pode ser renomeado; no Linux o AppImage é trocado no lugar
+// troca o próprio launcher: no Windows o .exe portátil em uso costuma poder ser renomeado; no Linux o AppImage é trocado no lugar.
+// Devolve o caminho para abrir, ou null quando a troca ficou para depois que o launcher fechar (trocaDepois abre sozinho)
 async function atualizarLauncher(info, progresso) {
   const atual = WIN ? process.env.PORTABLE_EXECUTABLE_FILE : process.env.APPIMAGE;
   if (!atual) throw new Error("este launcher não é a versão portátil: baixe a nova pelo GitHub");
   const novo = atual + ".novo";
   await baixar(info.url, novo, progresso);
-  if (WIN) { const velho = atual.replace(/\.exe$/i, "") + ".old.exe"; try { fs.unlinkSync(velho); } catch {} fs.renameSync(atual, velho); }
-  fs.renameSync(novo, atual); if (!WIN) fs.chmodSync(atual, 0o755);
   fs.writeFileSync(path.join(app.getPath("userData"), "novidades.json"), JSON.stringify({ versao: info.ultima, notas: info.notas }));
+  if (WIN) {
+    const velho = atual.replace(/\.exe$/i, "") + ".old.exe"; try { fs.unlinkSync(velho); } catch {}
+    // em alguns PCs o Windows trava o .exe aberto (EBUSY/EPERM): aí a troca é feita depois que o launcher fechar
+    try { fs.renameSync(atual, velho); } catch (e) { if (!/^(EBUSY|EPERM|EACCES)$/.test(e.code)) throw e; trocaDepois(atual, novo, velho); return null; }
+  }
+  fs.renameSync(novo, atual); if (!WIN) fs.chmodSync(atual, 0o755);
   return atual;
+}
+
+// um .cmd escondido espera o launcher fechar (até 2 min), troca os arquivos, abre a versão nova e se apaga. Os caminhos vão
+// por variáveis de ambiente: escritos no .cmd, pastas com acento quebram (o cmd lê o arquivo na página de código do console)
+function trocaDepois(atual, novo, velho) {
+  const cmd = path.join(os.tmpdir(), "mhlauncher-troca.cmd");
+  fs.writeFileSync(cmd, [
+    "@echo off", "set n=0",
+    ":espera", "ping -n 2 127.0.0.1 >nul", "set /a n+=1",
+    'move /y "%MHL_ATUAL%" "%MHL_VELHO%" >nul 2>&1',
+    "if errorlevel 1 if %n% lss 120 goto espera",
+    'if exist "%MHL_ATUAL%" goto fim',
+    'move /y "%MHL_NOVO%" "%MHL_ATUAL%" >nul',
+    'start "" "%MHL_ATUAL%"',
+    ":fim", '(goto) 2>nul & del "%~f0"', "",
+  ].join("\r\n"));
+  require("child_process").spawn("cmd.exe", ["/c", cmd], { detached: true, stdio: "ignore", windowsHide: true,
+    env: { ...process.env, MHL_ATUAL: atual, MHL_NOVO: novo, MHL_VELHO: velho } }).unref();
 }
 
 module.exports = { verPort, atualizarPort, verLauncher, aplicarCorrecao, atualizarLauncher, release, baixar, maior };

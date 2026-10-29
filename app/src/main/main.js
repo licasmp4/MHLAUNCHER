@@ -160,7 +160,7 @@ function registrar() {
   h("atualiza:portAplicar", async info => { if (await jogo.jogoAberto(dir)) throw new Error("Feche o jogo antes de atualizar."); return atualiza.atualizarPort(dir, info, progresso("port")); });
   h("atualiza:launcher", () => atualiza.verLauncher(dir));
   h("atualiza:correcao", async c => { if (await jogo.jogoAberto(dir)) throw new Error("Feche o jogo antes de atualizar."); return atualiza.aplicarCorrecao(dir, c, progresso("correcao")); });
-  h("atualiza:launcherAplicar", async info => { const exe = await atualiza.atualizarLauncher(info, progresso("launcher")); require("child_process").spawn(exe, [], { detached: true, stdio: "ignore" }).unref(); app.quit(); });
+  h("atualiza:launcherAplicar", async info => { const exe = await atualiza.atualizarLauncher(info, progresso("launcher")); if (exe) require("child_process").spawn(exe, [], { detached: true, stdio: "ignore" }).unref(); app.quit(); });
   h("novidades", () => { const f = path.join(app.getPath("userData"), "novidades.json"); try { const n = JSON.parse(fs.readFileSync(f, "utf8")); fs.unlinkSync(f); return n.versao === app.getVersion() ? n : null; } catch { return null; } });
 
   h("diag", () => dir && diag.ler(dir));
