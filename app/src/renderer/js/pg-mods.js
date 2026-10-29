@@ -73,8 +73,10 @@ Paginas.sobre = {
         botao("Pasta do jogo", () => api.abrir("jogo"), "peq", "pasta"), botao("Saves", () => api.abrir("saves"), "peq", "pasta"), botao("Screenshots", () => api.abrir("prints"), "peq", "pasta"), botao("Log do jogo", () => api.abrir("log"), "peq"),
         botao("Trocar pasta do jogo", async () => { if (await api.pastaEscolher()) location.reload(); else toast("Essa pasta não tem o " + (est.plataforma === "win32" ? "mhgurecomp.exe" : "mhgurecomp")); }, "peq"),
         botao("Restaurar padrões", async () => { await api.iniRestaurar(); toast("Configurações do port restauradas"); }, "peq fantasma"))),
-      cartao(secao("Créditos"), el("div", { style: { lineHeight: "1.9", color: "var(--tx2)" } },
-        "Tradução pt-BR, launcher, instalador e correções do port: ", el("b", { style: { color: "var(--tx)" } }, "licas.mp3"), el("br"),
+      // no pergaminho (app.css #pg-sobre .cartao): texto na tinta das dicas, nomes na tinta escura
+      cartao(secao("Créditos"), el("div", { class: "dica", style: { lineHeight: "1.9", fontSize: "inherit" } },
+        "Tradução pt-BR, launcher, instalador e correções do port: ", el("b", {}, "licas.mp3"), el("br"),
+        "Design e pixel art (tema, ícones e cenas animadas): ", el("b", {}, "Tainá (Ataenas)"), el("br"),
         "Port de PC MHGURecomp: morerokk", el("br"), "Texturas HD (MHGU HD Project): Monkbreh", el("br"), "Barra de vida e números de dano: Lawrence-al (plugins Forge)", el("br"),
         "Forge: Fexty12573 · fontes Cinzel e Alegreya Sans (SIL OFL 1.1)", el("br"), "Monster Hunter Generations Ultimate © CAPCOM. Use a sua própria cópia do jogo.")));
   },
