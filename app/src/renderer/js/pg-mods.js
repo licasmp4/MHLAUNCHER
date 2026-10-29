@@ -76,7 +76,7 @@ Paginas.sobre = {
       // no pergaminho (app.css #pg-sobre .cartao): texto na tinta das dicas, nomes na tinta escura
       cartao(secao("Créditos"), el("div", { class: "dica", style: { lineHeight: "1.9", fontSize: "inherit" } },
         "Tradução pt-BR, launcher, instalador e correções do port: ", el("b", {}, "licas.mp3"), el("br"),
-        "Design e pixel art (tema, ícones e cenas animadas): ", el("b", {}, "Tainá (Ataenas)"), el("br"),
+        "Design e pixel art (tema, ícones e cenas animadas): ", el("b", {}, "Thainá (Ataenas)"), el("br"),
         "Port de PC MHGURecomp: morerokk", el("br"), "Texturas HD (MHGU HD Project): Monkbreh", el("br"), "Barra de vida e números de dano: Lawrence-al (plugins Forge)", el("br"),
         "Forge: Fexty12573 · fontes Cinzel e Alegreya Sans (SIL OFL 1.1)", el("br"), "Monster Hunter Generations Ultimate © CAPCOM. Use a sua própria cópia do jogo.")));
   },
