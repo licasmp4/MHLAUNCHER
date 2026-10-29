@@ -14,6 +14,27 @@ const CenasPixel = (() => {
   const img = n => Object.assign(new Image(), { src: "img/pixel/cenas/" + n + ".png" });
   const IMG = { martelo: img("martelo"), base: img("ampulheta-base"), cima: img("ampulheta-cima"), baixo: img("ampulheta-baixo"), giro: img("ampulheta-giro") };
   const pronta = i => i.complete && i.naturalWidth > 0;
+  // o martelo aceso pela forja: um pouco mais claro, borda de baixo em brasa e a de cima no luar, para não sumir no céu
+  let marteloAceso = null;
+  function acende(im) {
+    const cv = Object.assign(document.createElement("canvas"), { width: im.naturalWidth, height: im.naturalHeight }), c = cv.getContext("2d");
+    c.drawImage(im, 0, 0); const d = c.getImageData(0, 0, cv.width, cv.height), p = d.data, w = cv.width, h = cv.height;
+    const vazio = (x, y) => x < 0 || y < 0 || x >= w || y >= h || p[(y * w + x) * 4 + 3] === 0, cor = (x, y) => { const i = (y * w + x) * 4; return [p[i], p[i + 1], p[i + 2]]; };
+    const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t)), brasa = [255, 138, 92], luar = [201, 189, 152], saida = new Uint8ClampedArray(p);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (vazio(x, y)) continue;
+      // cada pose ocupa 32 colunas: a vizinha de outra pose conta como vazio
+      const v = (dx, dy) => Math.floor((x + dx) / 32) !== Math.floor(x / 32) || vazio(x + dx, y + dy);
+      let c2 = cor(x, y).map(v => Math.min(255, v * 1.3 + 12));
+      if (v(0, 1) || v(1, 0)) c2 = mix(c2, brasa, .5); else if (v(0, -1) || v(-1, 0)) c2 = mix(c2, luar, .35);
+      const i = (y * w + x) * 4; saida[i] = c2[0]; saida[i + 1] = c2[1]; saida[i + 2] = c2[2]; }
+    c.putImageData(new ImageData(saida, w, h), 0, 0); return cv;
+  }
+  // brilho redondo em degraus (anéis de pixel, sem borrar); r = raio na horizontal, a altura é .6 dele
+  function brilho(g, cx, cy, r, cor, alfa) {
+    g.fillStyle = cor; g.globalAlpha = alfa; const ry = Math.round(r * .6);
+    for (let dy = -ry; dy <= ry; dy++) { const m = Math.round(r * Math.sqrt(1 - (dy / (ry + .5)) ** 2)); g.fillRect(cx - m, cy + dy, m * 2 + 1, 1); }
+    g.globalAlpha = 1;
+  }
   // poses do martelo a cada quadro (12 por segundo): 0 levantado, 1 descendo, 2 batendo, 3 recuo, 4 subindo
   const GOLPE = [0, 0, 0, 0, 0, 1, 2, 2, 3, 4, 4];
   const AREIA_MONTE = 7.6; // altura do monte cheio de ampulheta-baixo.png (mesmos grãos da parte de cima)
@@ -62,12 +83,13 @@ const CenasPixel = (() => {
       R(g, ax, ay, 34, 8, C.ferro); R(g, ax - 6, ay + 1, 8, 4, C.ferro); R(g, ax, ay, 34, 2, C.ferro2);
       const tique = Math.floor(t * 12), passo = tique % GOLPE.length, pose = GOLPE[passo], bate = pose === 2;
       R(g, ax + 12, ay - 3, 10, 3, bate ? C.ouro2 : C.brasa2); R(g, ax + 13, ay - 2, 8, 1, bate ? "#fff3d7" : C.ouro);
-      if (pronta(IMG.martelo)) g.drawImage(IMG.martelo, pose * 32, 0, 32, 32, ax + 4 - 8, ay - 7 - 24, 32, 32);
+      // o calor da forja em três anéis; no golpe cresce um degrau
+      [[26, .05], [18, .06], [10, .08]].forEach(([r, a]) => brilho(g, ax + 17, ay - 2, r + (bate ? 3 : 0), C.brasa, a + (bate ? .03 : 0)));
+      if (pronta(IMG.martelo)) { marteloAceso = marteloAceso || acende(IMG.martelo); g.drawImage(marteloAceso, pose * 32, 0, 32, 32, ax + 4 - 8, ay - 7 - 24, 32, 32); }
       // faíscas: estouram no primeiro quadro do golpe e se espalham e somem no segundo
       if (bate) { const r = sorte(Math.floor(tique / GOLPE.length) + 7), longe = passo === GOLPE.indexOf(2) ? 1 : 1.8;
         for (let i = 0; i < 12; i++) { const a = Math.PI * (1.05 + r() * .9), d = (3 + r() * 9) * longe;
           if (longe > 1 && i % 2) continue; R(g, ax + 17 + Math.cos(a) * d, ay - 3 + Math.sin(a) * d * .8, 1, 1, r() < .5 ? C.ouro2 : C.brasa2); } }
-      g.globalAlpha = bate ? .18 : .1; R(g, ax - 10, ay - 12, 54, 34, C.brasa); g.globalAlpha = 1;
     },
     // três pergaminhos pendurados; o carimbo "recomendado" desce de tempos em tempos no do meio
     graficos(g, t) {
