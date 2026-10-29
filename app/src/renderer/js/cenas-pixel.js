@@ -10,9 +10,17 @@ const CenasPixel = (() => {
     ouro: "#e9ba6f", ouro2: "#f5d48c", ferro: "#4b5546", ferro2: "#6b7663", ferro3: "#2a3029", escuro: "#050907", musgo: "#7f955c", verde: "#8fbf6a",
     azul: "#7fa9e0", roxo: "#b06aa8", areia: "#e9ba6f", vidro: "#2c5a43", vidro2: "#3f6b4f" };
   let fpsEscolhido = 60;
+  // os sprites da Tainá: desenhados em 1x, só copiados (sem escala) no canvas
+  const img = n => Object.assign(new Image(), { src: "img/pixel/cenas/" + n + ".png" });
+  const IMG = { martelo: img("martelo"), base: img("ampulheta-base"), cima: img("ampulheta-cima"), baixo: img("ampulheta-baixo"), giro: img("ampulheta-giro") };
+  const pronta = i => i.complete && i.naturalWidth > 0;
+  // poses do martelo a cada quadro (12 por segundo): 0 levantado, 1 descendo, 2 batendo, 3 recuo, 4 subindo
+  const GOLPE = [0, 0, 0, 0, 0, 1, 2, 2, 3, 4, 4];
+  const AREIA_MONTE = 7.6; // altura do monte cheio de ampulheta-baixo.png (mesmos grãos da parte de cima)
 
   const sorte = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
   function fundo(g, t) {
+    g.clearRect(0, 0, W, H); // o céu e o chão não cobrem a faixa entre eles: sem isto o que se mexe ali deixa rastro
     const fh = Math.ceil(H * .7 / C.ceu.length);
     C.ceu.forEach((c, i) => { g.fillStyle = c; g.fillRect(0, i * fh, W, fh + 1); if (i) { g.fillStyle = c; for (let x = i % 2; x < W; x += 2) g.fillRect(x, i * fh - 1, 1, 1); } });
     const r = sorte(3);
@@ -46,21 +54,20 @@ const CenasPixel = (() => {
       const px = 254, py = 6; R(g, px, py, 2, 46, C.madeira3);
       for (let x = 0; x < 18; x++) { const o = Math.round(Math.sin(t * 5 - x * .45) * 1.6 * x / 18); R(g, px + 2 + x, py + 2 + o, 1, 10, x < 2 ? C.brasa : C.brasa); if (x % 5 === 2) R(g, px + 2 + x, py + 5 + o, 1, 3, C.brasa2); }
     },
-    // bigorna e martelo: sobe, desce, faíscas no golpe; o lingote brilha
+    // bigorna e o martelo da Tainá (img/pixel/cenas/martelo.png, 5 poses de 32x32 girando em volta da mão):
+    // levanta e segura (antecipação), desce num quadro só com rastro, bate (faíscas, o lingote clareia), recua e sobe de novo
     cacada(g, t) {
       const ax = 196, ay = 34;
       R(g, ax + 8, ay + 8, 18, 10, C.ferro3); R(g, ax + 4, ay + 16, 26, 3, C.ferro3);
       R(g, ax, ay, 34, 8, C.ferro); R(g, ax - 6, ay + 1, 8, 4, C.ferro); R(g, ax, ay, 34, 2, C.ferro2);
-      const ciclo = (t * 1.6) % 1, bate = ciclo > .82;
-      R(g, ax + 12, ay - 3, 10, 3, bate ? C.ouro2 : C.brasa2); R(g, ax + 13, ay - 2, 8, 1, C.ouro);
-      // martelo girando em volta do cabo (3 posições)
-      const pos = ciclo < .5 ? 0 : ciclo < .82 ? 1 : 2;
-      const cabos = [[ax + 30, ay - 22, ax + 40, ay - 6], [ax + 24, ay - 18, ax + 38, ay - 8], [ax + 18, ay - 10, ax + 36, ay - 8]];
-      const [x1, y1, x2, y2] = cabos[pos];
-      for (let i = 0; i <= 14; i++) R(g, x1 + (x2 - x1) * i / 14, y1 + (y2 - y1) * i / 14, 2, 2, C.madeira2);
-      R(g, x1 - 4, y1 - 3, 9, 6, C.ferro); R(g, x1 - 4, y1 - 3, 9, 2, C.ferro2);
-      if (bate) { const r = sorte(Math.floor(t * 12)); for (let i = 0; i < 10; i++) R(g, ax + 17 + (r() - .5) * 26, ay - 4 - r() * 14, 1, 1, r() < .5 ? C.ouro2 : C.brasa2); }
-      g.globalAlpha = .1; R(g, ax - 10, ay - 12, 54, 34, C.brasa); g.globalAlpha = 1;
+      const tique = Math.floor(t * 12), passo = tique % GOLPE.length, pose = GOLPE[passo], bate = pose === 2;
+      R(g, ax + 12, ay - 3, 10, 3, bate ? C.ouro2 : C.brasa2); R(g, ax + 13, ay - 2, 8, 1, bate ? "#fff3d7" : C.ouro);
+      if (pronta(IMG.martelo)) g.drawImage(IMG.martelo, pose * 32, 0, 32, 32, ax + 4 - 8, ay - 7 - 24, 32, 32);
+      // faíscas: estouram no primeiro quadro do golpe e se espalham e somem no segundo
+      if (bate) { const r = sorte(Math.floor(tique / GOLPE.length) + 7), longe = passo === GOLPE.indexOf(2) ? 1 : 1.8;
+        for (let i = 0; i < 12; i++) { const a = Math.PI * (1.05 + r() * .9), d = (3 + r() * 9) * longe;
+          if (longe > 1 && i % 2) continue; R(g, ax + 17 + Math.cos(a) * d, ay - 3 + Math.sin(a) * d * .8, 1, 1, r() < .5 ? C.ouro2 : C.brasa2); } }
+      g.globalAlpha = bate ? .18 : .1; R(g, ax - 10, ay - 12, 54, 34, C.brasa); g.globalAlpha = 1;
     },
     // três pergaminhos pendurados; o carimbo "recomendado" desce de tempos em tempos no do meio
     graficos(g, t) {
@@ -73,16 +80,21 @@ const CenasPixel = (() => {
       if (ciclo < .25) { R(g, cx + 6, cy + desce - 12, 6, 10, C.madeira2); R(g, cx + 2, cy + desce - 2, 14, 4, C.madeira3); }
       if (ciclo >= .25) { g.globalAlpha = Math.min(1, (ciclo - .25) * 8); R(g, cx + 1, cy + 8, 16, 9, C.brasa); R(g, cx + 2, cy + 9, 14, 7, C.papel); R(g, cx + 3, cy + 10, 12, 5, C.brasa); R(g, cx + 5, cy + 12, 8, 1, C.papel); g.globalAlpha = 1; }
     },
-    // ampulheta: a areia cai na velocidade do FPS escolhido
+    // a ampulheta da Tainá (img/pixel/cenas/ampulheta-*.png, 32x38): a areia de cima escoa com um funil no meio, cai num
+    // fio pelo gargalo e vira um monte embaixo, na velocidade do FPS escolhido; quando acaba, ela gira 180° em 3 quadros
     fps(g, t) {
-      const x = 210, y = 6, vel = Math.max(.25, fpsEscolhido / 60);
-      R(g, x - 4, y, 34, 4, C.madeira2); R(g, x - 4, y + 46, 34, 4, C.madeira2); R(g, x - 2, y + 4, 2, 42, C.madeira3); R(g, x + 26, y + 4, 2, 42, C.madeira3);
-      for (let k = 0; k < 21; k++) { const w = Math.max(1, Math.round(12 - Math.abs(k - 10.5) * 1.1)); R(g, x + 13 - w, y + 4 + k * 2, w * 2, 2, C.vidro); }
-      const nivel = (t * vel * .08) % 1, topo = Math.round(16 * (1 - nivel)), baixo = Math.round(16 * nivel);
-      for (let k = 0; k < topo; k++) { const w = Math.max(1, Math.round((16 - k) * .6)); R(g, x + 13 - w, y + 22 - k, w * 2, 1, C.areia); }
-      for (let k = 0; k < baixo; k++) { const w = Math.max(1, Math.round((k + 2) * .55)); R(g, x + 13 - w, y + 45 - k, w * 2, 1, C.areia); }
-      for (let k = 0; k < 20; k += 2) if ((Math.floor(t * vel * 30) + k) % 4 < 2) R(g, x + 13, y + 23 + k, 1, 1, C.ouro2);
-      g.globalAlpha = .5; R(g, x + 6, y + 6, 1, 10, C.vidro2); g.globalAlpha = 1;
+      const x = 196, y = 13, vel = Math.max(.25, fpsEscolhido / 60), dur = 12.5 / vel, ciclo = t % (dur + .5);
+      if (ciclo >= dur) { const q = Math.min(2, Math.floor((ciclo - dur) / .5 * 3)); if (pronta(IMG.giro)) g.drawImage(IMG.giro, q * 50, 0, 50, 50, x + 16 - 25, y + 19 - 25, 50, 50); return; }
+      if (!pronta(IMG.base) || !pronta(IMG.cima) || !pronta(IMG.baixo)) return;
+      const f = ciclo / dur, T = 7.5 + 10.2 * Math.pow(f, .6), U = -.5 + AREIA_MONTE * f;
+      g.drawImage(IMG.base, x, y);
+      // cada coluna: a areia de cima some de cima para baixo (mais rápido no meio) e a de baixo sobe em monte
+      for (let c = 6; c < 26; c++) { const d = Math.abs(c - 15.5);
+        const ini = Math.max(10, Math.ceil(T - .3 * d)); if (ini <= 17) g.drawImage(IMG.cima, c, ini, 1, 18 - ini, x + c, y + ini, 1, 18 - ini);
+        const topo = Math.max(21, Math.ceil(30 - (U - .55 * d))); if (topo <= 30) g.drawImage(IMG.baixo, c, topo, 1, 31 - topo, x + c, y + topo, 1, 31 - topo); }
+      // o fio de areia: do gargalo até o monte, piscando em degraus
+      const chao = Math.max(21, Math.ceil(30 - U)), fio = Math.floor(t * 12 * Math.min(2, vel));
+      for (let k = 17; k < chao; k++) R(g, x + 15 + ((k + fio) % 3 === 0 ? 1 : 0), y + k, 1, 1, (k + fio) % 2 ? C.areia : "#e0b194");
     },
     // o controle: os botões acendem um por vez, a alavanca gira
     controles(g, t) {
