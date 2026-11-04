@@ -65,7 +65,7 @@ Os ports também rodam no celular, e os **APKs já estão aqui com a tradução 
 
 | Jogo | APK | Tradução pt-BR |
 |---|---|---|
-| **Generations Ultimate** | `Android-MHGURecomp.0.14.0.apk` (experimental) | `MHGU pt-BR (Android).zip`, importado em **Import mod (zip)** dentro do port |
+| **Generations Ultimate** | `Android-MHGURecomp.0.14.0.apk` (experimental) | `MHGU.pt-BR.Android.zip`, importado em **Import mod (zip)** dentro do port |
 | **Portable 3rd HD** | `yakumo-0.7.5-android-arm64.apk`, com controles na tela | `pt-BR.lang` (ou `pt-BR-nomes-originais.lang`), importado em **System → Text → Import translation** |
 | **4 Ultimate** | Em análise | Em análise |
 | **Freedom Unite** | Ainda sem versão para Android | — |
