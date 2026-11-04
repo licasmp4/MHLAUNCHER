@@ -24,7 +24,7 @@ O Generations Ultimate nativo, traduzido, com texturas HD e online com os amigos
 ---
 
 <div align="center">
-  <img src="docs/img/inicio.png" alt="Tela inicial do MHGU Launcher" width="85%">
+  <img src="docs/img/inicio.png" alt="Tela inicial do MHLAUNCHER, com a floresta em pixel art ao fundo" width="85%">
 </div>
 
 ## 🐉 Biblioteca
@@ -54,8 +54,8 @@ Os ports são projetos de fãs, cada um com o seu autor e a sua licença. Nenhum
 
 O launcher foi refeito em **Electron** para rodar igual no **Windows** e no **Linux** (Ubuntu, Arch...):
 
-- **Windows:** `MHGU-Launcher-3.x.x-windows.exe` (portátil: coloque na pasta do `mhgurecomp.exe`)
-- **Linux:** `MHGU-Launcher-3.x.x-linux.AppImage` ou `.deb` (aponte a pasta do port na primeira vez)
+- **Windows:** `MHLAUNCHER-3.x.x-windows.exe` (portátil: coloque na pasta do `mhgurecomp.exe`)
+- **Linux:** `MHLAUNCHER-3.x.x-linux.AppImage` ou `.deb` (aponte a pasta do port na primeira vez)
 
 O port oficial roda no Windows e no Linux. O macOS ainda não é suportado pelo port, então o launcher de Mac fica para quando ele for.
 
@@ -64,7 +64,7 @@ O port oficial roda no Windows e no Linux. O macOS ainda não é suportado pelo 
 > [!IMPORTANT]
 > O jogo **não vem junto**. Você precisa da **sua própria cópia** do Monster Hunter Generations Ultimate (Switch), na versão **1.4.0**.
 
-1. Baixe o **`Novo MHGU.zip`** em [Releases](../../releases/latest) e extraia (botão direito → *Extrair tudo*).
+1. Baixe o **`Novo-MHGU.zip`** em [Releases](../../releases/latest) e extraia (botão direito → *Extrair tudo*).
 2. Abra o **`Instalar MHGU.exe`** e siga as telas:
    - escolha a pasta onde instalar;
    - aponte o jogo base (**`.xci`**), o update 1.4.0 (**`.nsp`**) e o seu **`prod.keys`**.
@@ -73,13 +73,13 @@ O port oficial roda no Windows e no Linux. O macOS ainda não é suportado pelo 
 3. Espere a instalação (uns 10 minutos) e abra pelo atalho **MHGU PC (pt-BR HD)** na área de trabalho.
 
 > [!TIP]
-> Já tem o port instalado? Baixe só o **`MHGU-Launcher.exe`** e coloque na pasta do `mhgurecomp.exe`.
+> Já tem o port instalado? Baixe só o **`MHLAUNCHER-3.x.x-windows.exe`** e coloque na pasta do `mhgurecomp.exe`.
 
 ### Requisitos
 
 | | Mínimo |
 |---|---|
-| Sistema | Windows 10 ou 11, 64 bits |
+| Sistema | Windows 10 ou 11, 64 bits, ou Linux 64 bits (Ubuntu, Arch...) |
 | Processador | com AVX2 (Intel a partir da 4ª geração, AMD Ryzen) |
 | Placa de vídeo | com Vulkan 1.2 |
 | Espaço | ~30 GB livres durante a instalação |
@@ -120,7 +120,7 @@ Mostra os **controles conectados** na hora (DualSense, DualShock, Xbox, Pro Cont
 <td width="50%" valign="top">
 
 ### 🩸 Caçada
-Liga e desliga a **barra de vida** e os **números de dano**, mostra o **diagnóstico da última caçada**, ajusta a **vida dos monstros** pelo número de caçadores e libera as **missões da Vila no Hub**.
+Liga e desliga a **barra de vida**, os **números de dano**, o **hitmarker**, a **afiação exata** da arma e o **medidor de dano** da missão, mostra o **diagnóstico da última caçada**, ajusta a **vida dos monstros** pelo número de caçadores e libera as **missões da Vila no Hub**.
 
 </td>
 </tr>
@@ -142,9 +142,22 @@ Liga e desliga mods e cheats sem mexer em pastas.
 
 </td>
 </tr>
+<tr>
+<td width="50%" valign="top">
+
+### 📖 Sobre
+A versão do launcher e do port com o botão de **atualizar**, as **pastas** do jogo, dos saves e das screenshots e o log do jogo a um clique, e os créditos de quem fez cada parte.
+
+</td>
+<td width="50%"><img src="docs/img/sobre.png" alt="Página Sobre"></td>
+</tr>
 </table>
 
-**E também:** seus caçadores na tela inicial (nome, HR, horas e zenny), **importação do save** do Eden/yuzu/Ryujinx com backup automático, e as configurações salvas sozinhas.
+### 🎨 Visual em pixel art
+
+O launcher inteiro é em pixel art, com direção de arte da Thainá. No fundo, uma floresta à noite com o pinheiro desenhado por ela: três fileiras iluminadas pela lua, neblina entre elas, vaga-lumes e, de vez em quando, um wyvern gorducho cruzando o céu. No alto de cada aba, uma cena animada com a sua própria luz: o quadro de missões com a lanterna, a bigorna e o martelo na brasa da forja, a ampulheta escoando, os pergaminhos ao luar, o controle com LEDs, o baú de mods e o livro do Sobre. Tudo anda em degraus, como jogo antigo.
+
+**E também:** a aba **Collabs** com as missões de colaboração e onde achar cada uma, seus caçadores na tela inicial (nome, HR, horas e zenny), **importação do save** do Eden/yuzu/Ryujinx com backup automático, e as configurações salvas sozinhas.
 
 ## 🤝 Jogar online
 
@@ -205,6 +218,7 @@ O jogo base precisa ser o **`.xci`** (o `.nsp` do jogo base não é aceito) e o 
 - [ ] Distância de visão maior
 - [x] Visual de guilda: quadro de missões, cartão de guilda, cenas animadas e perfis Leve / Equilibrado / Ultra
 - [x] Online de verdade: amigos online, Hub aberto, ping e aviso de versão
+- [x] Tema em pixel art: floresta animada ao fundo e uma cena com luz própria em cada aba
 
 ## 💬 Comunidade
 
@@ -255,6 +269,7 @@ O MHLAUNCHER instala e abre estes ports. Todo o mérito de rodar os jogos no PC 
 | Fexty12573 | Forge |
 | SciresM | hactool |
 | [Natanael Gama](https://github.com/NDISCOVER/Cinzel-Typeface) e [Huerta Tipográfica](https://www.huertatipografica.com/) | Fontes Cinzel e Alegreya Sans (SIL Open Font License 1.1) |
+| Ana Sanfelippo, [Pixelify Sans Project Authors](https://github.com/eifetx/Pixelify-Sans) e Press Start 2P Project Authors | Fontes Almendra SC, Pixelify Sans e Press Start 2P do tema pixel (SIL Open Font License 1.1) |
 
 Licenças de cada um em [TERCEIROS.md](TERCEIROS.md).
 

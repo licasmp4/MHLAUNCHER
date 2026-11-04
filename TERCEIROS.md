@@ -13,6 +13,7 @@ O MHLAUNCHER usa ou baixa estes projetos. Cada um pertence ao seu autor e segue 
 | Forge | Fexty12573 | ver o repositório |
 | hactool | SciresM | ISC |
 | [Cinzel](https://github.com/NDISCOVER/Cinzel-Typeface) e Alegreya Sans | Natanael Gama, Huerta Tipográfica | SIL Open Font License 1.1 |
+| Almendra SC, [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) e Press Start 2P (fontes do tema pixel) | Ana Sanfelippo, The Pixelify Sans Project Authors, The Press Start 2P Project Authors | SIL Open Font License 1.1 |
 
 ## MHGURecomp (MIT)
 
