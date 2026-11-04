@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0E1015"/>
+      <stop offset="0.6" stop-color="#151A24"/>
+      <stop offset="1" stop-color="#2A2216"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F6C46A"/>
+      <stop offset="1" stop-color="#E08A2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.45" r="0.5">
+      <stop offset="0" stop-color="#E8A33D" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#E8A33D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="320" rx="24" fill="url(#bg)"/>
+  <rect width="1200" height="320" rx="24" fill="url(#glow)"/>
+  <!-- garras -->
+  <g fill="none" stroke="url(#gold)" stroke-width="10" stroke-linecap="round" opacity="0.9">
+    <path d="M905 70 C 960 120, 990 190, 985 265"/>
+    <path d="M955 55 C 1010 110, 1045 185, 1040 262"/>
+    <path d="M1005 45 C 1062 100, 1100 180, 1095 258"/>
+  </g>
+  <rect x="1" y="1" width="1198" height="318" rx="24" fill="none" stroke="#E8A33D" stroke-opacity="0.35" stroke-width="2"/>
+  <text x="70" y="110" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="6" fill="#E8A33D">MHGU LAUNCHER</text>
+  <text x="68" y="178" font-family="Segoe UI, Arial, sans-serif" font-size="56" font-weight="700" fill="#F2F4F8">Monster Hunter</text>
+  <text x="70" y="226" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="url(#gold)">Generations Ultimate no PC · em português</text>
+  <text x="70" y="272" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#8C93A3">Tradução pt-BR · Texturas HD · Online com amigos · Atualização automática · por licas.mp3</text>
+</svg>
