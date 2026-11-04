@@ -35,6 +35,7 @@ O Generations Ultimate nativo, traduzido, com texturas HD e online com os amigos
 | **4 Ultimate** (3DS) | [MH4UltimateDC](https://github.com/CompaLarios18/MH4UltimateDC) | Instala, atualiza e abre o port |
 | **Freedom Unite** (PSP) | [MHForever](https://github.com/Mango77x/MHForever) | Instala, atualiza e abre o port |
 | **Portable 3rd HD** (PSP/PS3) | [Yakumo](https://github.com/TeamGDB/Yakumo) | Instala, atualiza e abre o port; tradução pt-BR da comunidade a um clique |
+| **Tri** (Wii) | [OceanTriRecomp](https://github.com/krisztsa/OceanTriRecomp), de [krisztsa](https://github.com/krisztsa) | **Em análise:** ainda não dá para instalar pelo launcher |
 
 Os ports são projetos de fãs, cada um com o seu autor e a sua licença. Nenhum jogo vem junto: cada um usa a própria cópia. O MHLAUNCHER avisa quando sai versão nova de qualquer um deles.
 
@@ -70,7 +71,9 @@ Os ports também rodam no celular, e os **APKs já estão aqui com a tradução 
 | **4 Ultimate** | Em análise | Em análise |
 | **Freedom Unite** | Ainda sem versão para Android | — |
 
-**O que o celular precisa (Generations Ultimate):** Android 10 ou mais novo, processador ARM64, Vulkan 1.1, um **controle** e uns **13 GB** livres. No celular o online é só entre celulares.
+**O que o celular precisa (Generations Ultimate):** Android 10 ou mais novo, processador ARM64, Vulkan 1.1, um **controle** e uns **13 GB** livres. 
+
+**Online no celular:** os Hubs públicos do celular só mostram outros celulares. Para jogar com amigos, todos colocam a mesma chave de matchmaking no menu do port. Com PC, o port precisa estar na mesma versão: hoje o APK é a 0.14.0 e o launcher do PC usa outra, então por enquanto é celular com celular.
 
 > **Em teste.** Os APKs são os mesmos dos lançamentos oficiais de cada port, com os hashes conferidos. As traduções foram conferidas no formato que cada app aceita no Android, mas ainda não num aparelho de verdade: conte no Discord como foi no seu celular. Nenhum jogo vem junto: cada um usa a própria cópia.
 
@@ -234,6 +237,8 @@ O jogo base precisa ser o **`.xci`** (o `.nsp` do jogo base não é aceito) e o 
 
 ## 🗺️ Próximos passos
 
+- [ ] Monster Hunter Tri (Wii): port em análise
+- [ ] Tradução pt-BR do 4 Ultimate, do Freedom Unite e do Tri: na fila
 - [ ] Android: testar os APKs e as traduções em aparelhos de verdade
 - [x] Android: APKs dos ports com a tradução pt-BR pronta
 - [ ] Barra de vida e números de dano feitos dentro do port
@@ -282,6 +287,8 @@ O MHLAUNCHER instala e abre estes ports. Todo o mérito de rodar os jogos no PC 
 | 🔵 4 Ultimate | [MH4UltimateDC](https://github.com/CompaLarios18/MH4UltimateDC) | [CompaLarios18](https://github.com/CompaLarios18) |
 | 🔴 Freedom Unite | [MHForever](https://github.com/Mango77x/MHForever) | [Mango77x](https://github.com/Mango77x) |
 | 🟢 Portable 3rd HD | [Yakumo](https://github.com/TeamGDB/Yakumo) | [TeamGDB](https://github.com/TeamGDB) |
+
+Em análise, ainda fora do launcher: **Monster Hunter Tri**, com o [OceanTriRecomp](https://github.com/krisztsa/OceanTriRecomp), de [krisztsa](https://github.com/krisztsa).
 
 ### Também usamos
 
