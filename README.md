@@ -10,13 +10,14 @@
 ![Linux](https://img.shields.io/badge/Linux-Ubuntu%20%7C%20Arch-E95420?style=for-the-badge&logo=linux&logoColor=white)
 ![Idioma](https://img.shields.io/badge/idioma-pt--BR-009C3B?style=for-the-badge)
 ![Port](https://img.shields.io/badge/MHGURecomp-0.10.1-8C93A3?style=for-the-badge)
+[![Me paga um café](https://img.shields.io/badge/%E2%98%95%20me%20paga%20um%20caf%C3%A9-apoie%20o%20projeto-FFDD00?style=for-the-badge)](https://mepagaumcafe.com.br/p/licasmp3/)
 
 # MHLAUNCHER
 
 **Os ports de Monster Hunter no PC num lugar só, em português.**<br>
 O Generations Ultimate nativo, traduzido, com texturas HD e online com os amigos, e o 4 Ultimate e o Freedom Unite com um clique.
 
-[**⬇️ Baixar**](../../releases/latest) · [Como instalar](#-como-instalar) · [Recursos](#-recursos) · [Jogar online](#-jogar-online) · [Dúvidas](#-dúvidas)
+[**⬇️ Baixar**](../../releases/latest) · [**☕ Me paga um café**](https://mepagaumcafe.com.br/p/licasmp3/) · [Como instalar](#-como-instalar) · [Recursos](#-recursos) · [Jogar online](#-jogar-online) · [Dúvidas](#-dúvidas)
 
 </div>
 
@@ -209,7 +210,15 @@ O jogo base precisa ser o **`.xci`** (o `.nsp` do jogo base não é aceito) e o 
 
 - **Discord:** [discord.gg/WRmDhGs9uz](https://discord.gg/WRmDhGs9uz): ajuda na instalação, grupos de caça, builds, ideias pro launcher e avisos de versão nova.
 - **Tradução pt-BR do MHGU** (também pra emulador, celular e Switch): [baixar no Google Drive](https://drive.google.com/file/d/1vzlwrwAhB6YdydBr9YBzHfrzPvEW_E2c/view?usp=share_link).
-- **Quer ajudar?** O MHLAUNCHER é e vai continuar de graça. Se quiser dar uma força: [☕ pague um café](https://mepagaumcafe.com.br/p/licasmp3/).
+
+## ☕ Apoie o projeto
+
+O MHLAUNCHER é e vai continuar **de graça**, sem anúncio e sem conta. Ele é feito por duas pessoas, no tempo livre.
+Se ele te ajudou a voltar a caçar, você pode dar uma força:
+
+<a href="https://mepagaumcafe.com.br/p/licasmp3/"><img src="https://img.shields.io/badge/%E2%98%95%20Me%20paga%20um%20caf%C3%A9-FFDD00?style=for-the-badge" alt="Me paga um café" height="40"></a>
+
+Sem grana? Contar pros amigos, dar uma ⭐ aqui no GitHub e reportar bugs no Discord já ajuda muito.
 
 ## 📜 Licença
 
@@ -217,16 +226,37 @@ O MHLAUNCHER é **gratuito para baixar e usar**, mas **não é código aberto**:
 
 ## 💛 Créditos
 
+### Criadores do MHLAUNCHER
+
+<table>
+<tr>
+<td align="center" width="50%"><a href="https://github.com/licasmp4"><img src="https://github.com/licasmp4.png" width="96" alt=""><br><b>licas.mp3</b></a><br><sub>launcher, instalador, tradução pt-BR e correções do port</sub></td>
+<td align="center" width="50%"><a href="https://github.com/Ataenas"><img src="https://github.com/Ataenas.png" width="96" alt=""><br><b>Thaina</b></a><br><sub>cocriadora do projeto, arte em pixel e comunidade</sub></td>
+</tr>
+</table>
+
+### Os ports
+
+O MHLAUNCHER instala e abre estes ports. Todo o mérito de rodar os jogos no PC é dos seus autores: passe lá e deixe uma ⭐.
+
+| Jogo | Port | Autor |
+|---|---|---|
+| 🟠 Generations Ultimate | [MHGURecomp](https://github.com/morerokk/MHGURecomp) | [morerokk](https://github.com/morerokk) |
+| 🔵 4 Ultimate | [MH4UltimateDC](https://github.com/CompaLarios18/MH4UltimateDC) | [CompaLarios18](https://github.com/CompaLarios18) |
+| 🔴 Freedom Unite | [MHForever](https://github.com/Mango77x/MHForever) | [Mango77x](https://github.com/Mango77x) |
+| 🟢 Portable 3rd HD | [Yakumo](https://github.com/TeamGDB/Yakumo) | [TeamGDB](https://github.com/TeamGDB) |
+
+### Também usamos
+
 | | |
 |---|---|
-| **licas.mp3** | Criação do MHLAUNCHER, tradução pt-BR, launcher, instalador e correções do port |
-| **Thaina** | Criação do MHLAUNCHER e da comunidade |
-| [morerokk](https://github.com/morerokk/MHGURecomp) | Port de PC MHGURecomp |
 | [Monkbreh](https://github.com/Monkbreh/MHGU-HD-Project) | Texturas HD (MHGU HD Project) |
 | [Lawrence-al](https://github.com/Lawrence-al) | Barra de vida e números de dano (plugins Forge) |
 | Fexty12573 | Forge |
 | SciresM | hactool |
 | [Natanael Gama](https://github.com/NDISCOVER/Cinzel-Typeface) e [Huerta Tipográfica](https://www.huertatipografica.com/) | Fontes Cinzel e Alegreya Sans (SIL Open Font License 1.1) |
+
+Licenças de cada um em [TERCEIROS.md](TERCEIROS.md).
 
 <div align="center">
 <sub>Monster Hunter Generations Ultimate © CAPCOM. Projeto de fãs, sem fins lucrativos e sem ligação com a CAPCOM.<br>
