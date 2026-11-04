@@ -55,7 +55,7 @@ Os ports são projetos de fãs, cada um com o seu autor e a sua licença. Nenhum
 O launcher foi refeito em **Electron** para rodar igual no **Windows** e no **Linux** (Ubuntu, Arch...):
 
 - **Windows:** `MHLAUNCHER-3.x.x-windows.exe` (portátil: coloque na pasta do `mhgurecomp.exe`)
-- **Linux:** `MHLAUNCHER-3.x.x-linux.AppImage` ou `.deb` (aponte a pasta do port na primeira vez)
+- **Linux:** `MHLAUNCHER-3.x.x-linux.AppImage` ou `.deb` (aponte a pasta do port na primeira vez). Por enquanto, os arquivos de Linux estão na [versão 3.8.0](../../releases/tag/v3.8.0); a 3.9.0 saiu só para Windows.
 
 O port oficial roda no Windows e no Linux. O macOS ainda não é suportado pelo port, então o launcher de Mac fica para quando ele for.
 
