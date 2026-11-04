@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/img/banner.svg" alt="MHLAUNCHER: os ports de Monster Hunter no PC, em português" width="100%">
+<img src="docs/img/banner.gif" alt="MHLAUNCHER: os ports de Monster Hunter no PC, em português" width="100%">
 
 <br>
 
