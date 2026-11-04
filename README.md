@@ -59,20 +59,20 @@ O launcher foi refeito em **Electron** para rodar igual no **Windows** e no **Li
 
 O port oficial roda no Windows e no Linux. O macOS ainda não é suportado pelo port, então o launcher de Mac fica para quando ele for.
 
-## 📱 Android (em breve)
+## 📱 Android (beta)
 
-Os ports também têm versão para celular, e o MHLAUNCHER vai disponibilizar os **APKs com a tradução pt-BR pronta**, junto com o passo a passo de cada um.
+Os ports também rodam no celular, e os **APKs já estão aqui com a tradução pt-BR pronta**: baixe tudo em **[Android (beta)](../../releases/tag/android-1)**.
 
-| Jogo | No Android | Tradução pt-BR |
+| Jogo | APK | Tradução pt-BR |
 |---|---|---|
-| **Generations Ultimate** | APK do MHGURecomp (experimental) | Pacote `.zip` da tradução, importado em **Import mod (zip)** dentro do port |
-| **Portable 3rd HD** | APK do Yakumo, com controles na tela | Arquivo `.lang` da comunidade, importado em **System → Text → Import translation** |
+| **Generations Ultimate** | `Android-MHGURecomp.0.14.0.apk` (experimental) | `MHGU pt-BR (Android).zip`, importado em **Import mod (zip)** dentro do port |
+| **Portable 3rd HD** | `yakumo-0.7.5-android-arm64.apk`, com controles na tela | `pt-BR.lang` (ou `pt-BR-nomes-originais.lang`), importado em **System → Text → Import translation** |
 | **4 Ultimate** | Em análise | Em análise |
 | **Freedom Unite** | Ainda sem versão para Android | — |
 
 **O que o celular precisa (Generations Ultimate):** Android 10 ou mais novo, processador ARM64, Vulkan 1.1, um **controle** e uns **13 GB** livres. No celular o online é só entre celulares.
 
-> As traduções já foram conferidas no formato que cada port aceita no Android, mas ainda estão em teste em aparelhos de verdade. Os APKs saem aqui em [Releases](../../releases) quando esse teste terminar. Nenhum jogo vem junto: cada um usa a própria cópia.
+> **Em teste.** Os APKs são os mesmos dos lançamentos oficiais de cada port, com os hashes conferidos. As traduções foram conferidas no formato que cada app aceita no Android, mas ainda não num aparelho de verdade: conte no Discord como foi no seu celular. Nenhum jogo vem junto: cada um usa a própria cópia.
 
 ## 📦 Como instalar
 
@@ -234,7 +234,8 @@ O jogo base precisa ser o **`.xci`** (o `.nsp` do jogo base não é aceito) e o 
 
 ## 🗺️ Próximos passos
 
-- [ ] Android: APKs dos ports com a tradução pt-BR pronta
+- [ ] Android: testar os APKs e as traduções em aparelhos de verdade
+- [x] Android: APKs dos ports com a tradução pt-BR pronta
 - [ ] Barra de vida e números de dano feitos dentro do port
 - [ ] Qualidade de vida: coleta mais rápida, pular a espera do fim da missão e mais
 - [ ] Distância de visão maior
