@@ -206,6 +206,12 @@ No menu **Opções** dentro do próprio jogo.
 </details>
 
 <details>
+<summary><b>A atualização do launcher deu erro <code>EBUSY</code></b></summary>
+
+Acontece em alguns PCs ao atualizar a partir da 3.8.0, porque o Windows trava o launcher aberto. Seus saves e o jogo não são afetados. Feche o launcher, baixe o **`MHLAUNCHER-3.9.0-windows.exe`** em [Releases](../../releases/latest), coloque na pasta do launcher, apague o antigo e dê ao novo o mesmo nome dele. Da 3.9.0 em diante, a troca espera o launcher fechar e termina sozinha.
+</details>
+
+<details>
 <summary><b>O instalador diz que o arquivo está errado</b></summary>
 
 O jogo base precisa ser o **`.xci`** (o `.nsp` do jogo base não é aceito) e o update precisa ser o **1.4.0** do MHGU. Cada campo do instalador explica o que está faltando.
